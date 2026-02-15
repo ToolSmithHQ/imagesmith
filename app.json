@@ -38,6 +38,19 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Image Smith needs access to your photos to convert images."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Image Smith needs permission to save converted images.",
+          "savePhotosPermission": "Allow Image Smith to save images to your gallery."
+        }
       ]
     ],
     "experiments": {
