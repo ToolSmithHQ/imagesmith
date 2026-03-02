@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
+import { NotificationFeedbackType } from 'expo-haptics';
 import { useImageStore } from '@/src/stores/use-image-store';
-import { useHistoryStore } from '@/src/stores/use-history-store';
 import { convertImage } from '@/src/services/image-processor';
 import { ProcessingError } from '@/src/types/image';
+import { triggerNotification } from '@/src/utils/haptics';
 
 export function useConversion() {
   const {
@@ -14,8 +15,6 @@ export function useConversion() {
     setResult,
     reset,
   } = useImageStore();
-
-  const { addConversion } = useHistoryStore();
 
   const startConversion = useCallback(async () => {
     if (!sourceImage) return;
@@ -30,7 +29,7 @@ export function useConversion() {
       );
 
       setResult(result);
-      addConversion(result);
+      triggerNotification();
     } catch (error) {
       const processingError: ProcessingError =
         error && typeof error === 'object' && 'code' in error
@@ -47,13 +46,13 @@ export function useConversion() {
         status: 'error',
         error: processingError,
       });
+      triggerNotification(NotificationFeedbackType.Error);
     }
   }, [
     sourceImage,
     conversionOptions,
     setProcessingState,
     setResult,
-    addConversion,
   ]);
 
   const retry = useCallback(() => {

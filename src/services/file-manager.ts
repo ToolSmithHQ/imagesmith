@@ -1,7 +1,6 @@
 import { File, Paths, Directory } from 'expo-file-system/next';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
-import { ImageFormat, FORMAT_EXTENSIONS } from '@/src/types/formats';
 import { createProcessingError } from '@/src/utils/error-handler';
 
 const CACHE_DIR_NAME = 'imagesmith';
@@ -15,15 +14,6 @@ export function ensureCacheDir(): void {
   if (!dir.exists) {
     dir.create();
   }
-}
-
-export function generateOutputUri(format: ImageFormat): string {
-  const ext = FORMAT_EXTENSIONS[format][0];
-  const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
-  ensureCacheDir();
-  const file = new File(getCacheDir(), `converted_${timestamp}_${random}${ext}`);
-  return file.uri;
 }
 
 export function generateId(): string {
@@ -76,13 +66,3 @@ export function getFileSize(uri: string): number {
   }
 }
 
-export function cleanCache(): void {
-  try {
-    const dir = getCacheDir();
-    if (dir.exists) {
-      dir.delete();
-    }
-  } catch {
-    // silently fail cache cleanup
-  }
-}

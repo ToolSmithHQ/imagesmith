@@ -1,5 +1,8 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import { Text, StyleSheet } from 'react-native';
+import { ImpactFeedbackStyle } from 'expo-haptics';
+import { triggerImpact } from '@/src/utils/haptics';
+import { AnimatedPressable } from '@/src/components/ui/animated-pressable';
+import { Typography, Radius } from '@/src/constants/theme';
 
 interface ChipProps {
   label: string;
@@ -18,14 +21,15 @@ export function Chip({
 }: ChipProps) {
   const handlePress = () => {
     if (disabled) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    triggerImpact(ImpactFeedbackStyle.Light);
     onPress?.();
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
       disabled={disabled || !onPress}
+      scaleValue={0.95}
       style={[
         styles.chip,
         selected
@@ -39,7 +43,7 @@ export function Chip({
       >
         {label}
       </Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -47,12 +51,12 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: Radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
   },
   label: {
-    fontSize: 14,
+    ...Typography.labelLarge,
     fontWeight: '600',
   },
   disabled: {

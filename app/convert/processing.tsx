@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import { useConversion } from '@/src/hooks/use-conversion';
 import { ProgressBar } from '@/src/components/ui/progress-bar';
 import { Button } from '@/src/components/ui/button';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 export default function ProcessingScreen() {
   const router = useRouter();
@@ -51,6 +51,14 @@ export default function ProcessingScreen() {
                   ? 'Almost done...'
                   : 'Finishing up...'}
             </Text>
+            <Button
+              variant="ghost"
+              title="Cancel"
+              onPress={() => {
+                reset();
+                router.back();
+              }}
+            />
           </View>
         ) : (
           <View style={styles.errorSection}>

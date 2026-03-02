@@ -4,7 +4,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 interface ProgressBarProps {
   progress: number; // 0-1
@@ -12,6 +12,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({ progress }: ProgressBarProps) {
   const tint = useThemeColor({}, 'tint');
+  const surfaceContainerHigh = useThemeColor({}, 'surfaceContainerHigh');
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: withTiming(`${Math.min(Math.max(progress, 0), 1) * 100}%`, {
@@ -21,7 +22,7 @@ export function ProgressBar({ progress }: ProgressBarProps) {
   }));
 
   return (
-    <View style={styles.track}>
+    <View style={[styles.track, { backgroundColor: surfaceContainerHigh }]}>
       <Animated.View
         style={[styles.fill, { backgroundColor: tint }, animatedStyle]}
       />
@@ -31,13 +32,12 @@ export function ProgressBar({ progress }: ProgressBarProps) {
 
 const styles = StyleSheet.create({
   track: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(128, 128, 128, 0.2)',
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   fill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 4,
   },
 });

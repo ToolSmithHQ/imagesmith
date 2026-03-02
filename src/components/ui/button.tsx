@@ -1,13 +1,8 @@
-import {
-  Pressable,
-  Text,
-  ActivityIndicator,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
-} from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
+import { triggerImpact } from '@/src/utils/haptics';
+import { AnimatedPressable } from '@/src/components/ui/animated-pressable';
+import { Typography, Radius } from '@/src/constants/theme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -27,12 +22,12 @@ export function Button({
   disabled = false,
 }: ButtonProps) {
   const tint = useThemeColor({}, 'tint');
-  const text = useThemeColor({}, 'text');
   const background = useThemeColor({}, 'background');
+  const surfaceContainerHigh = useThemeColor({}, 'surfaceContainerHigh');
 
   const handlePress = () => {
     if (disabled || loading) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    triggerImpact();
     onPress();
   };
 
@@ -40,22 +35,18 @@ export function Button({
     variant === 'primary'
       ? { backgroundColor: tint }
       : variant === 'secondary'
-        ? { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: tint }
+        ? { backgroundColor: surfaceContainerHigh, borderWidth: 1.5, borderColor: tint }
         : { backgroundColor: 'transparent' };
 
-  const textStyle: TextStyle =
-    variant === 'primary'
-      ? { color: background }
-      : { color: tint };
+  const textColor = variant === 'primary' ? background : tint;
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={handlePress}
       disabled={disabled || loading}
-      style={({ pressed }) => [
+      style={[
         styles.container,
         containerStyle,
-        pressed && styles.pressed,
         disabled && styles.disabled,
       ]}
     >
@@ -65,9 +56,9 @@ export function Button({
           color={variant === 'primary' ? background : tint}
         />
       ) : (
-        <Text style={[styles.text, textStyle]}>{title}</Text>
+        <Text style={[styles.text, { color: textColor }]}>{title}</Text>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -75,18 +66,13 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 14,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 48,
   },
   text: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.98 }],
+    ...Typography.titleMedium,
   },
   disabled: {
     opacity: 0.5,

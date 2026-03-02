@@ -3,34 +3,30 @@ import { Image } from 'expo-image';
 import { Chip } from '@/src/components/ui/chip';
 import { FORMAT_DISPLAY } from '@/src/constants/formats';
 import { ImageAsset } from '@/src/types/image';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { formatFileSize } from '@/src/utils/format-file-size';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
+import { Typography, Spacing, Radius } from '@/src/constants/theme';
 
 interface ImagePreviewProps {
   image: ImageAsset;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
-}
-
 export function ImagePreview({ image }: ImagePreviewProps) {
   const textColor = useThemeColor({}, 'text');
-  const iconColor = useThemeColor({}, 'icon');
+  const onSurfaceVariant = useThemeColor({}, 'onSurfaceVariant');
+  const surfaceDim = useThemeColor({}, 'surfaceDim');
   const display = FORMAT_DISPLAY[image.format];
 
   return (
     <View style={styles.container}>
       <Image
         source={{ uri: image.uri }}
-        style={styles.image}
+        style={[styles.image, { backgroundColor: surfaceDim }]}
         contentFit="contain"
       />
       <View style={styles.info}>
         <Chip label={display.label} color={display.color} selected />
-        <Text style={[styles.dimensions, { color: iconColor }]}>
+        <Text style={[styles.dimensions, { color: onSurfaceVariant }]}>
           {image.width} x {image.height}
         </Text>
         <Text style={[styles.size, { color: textColor }]}>
@@ -43,26 +39,25 @@ export function ImagePreview({ image }: ImagePreviewProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
   },
   image: {
     width: '100%',
-    aspectRatio: 1,
-    borderRadius: 12,
-    backgroundColor: 'rgba(128,128,128,0.1)',
+    aspectRatio: 16 / 10,
+    borderRadius: Radius.md,
   },
   info: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingTop: 12,
+    gap: Spacing.sm,
+    paddingTop: Spacing.md,
   },
   dimensions: {
-    fontSize: 13,
+    ...Typography.bodySmall,
   },
   size: {
-    fontSize: 13,
+    ...Typography.bodySmall,
     fontWeight: '500',
   },
 });

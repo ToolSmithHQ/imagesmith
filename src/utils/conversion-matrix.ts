@@ -76,6 +76,13 @@ const CONVERSION_PATHS: ConversionPath[] = [
     library: 'expo-image-manipulator',
   },
   {
+    source: ImageFormat.TIFF,
+    target: ImageFormat.PNG,
+    phase: 2,
+    platformSupport: { ios: true, android: false },
+    library: 'expo-image-manipulator',
+  },
+  {
     source: ImageFormat.AVIF,
     target: ImageFormat.JPEG,
     phase: 2,

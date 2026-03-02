@@ -1,50 +1,93 @@
-# Welcome to your Expo app 👋
+# Image Smith
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Privacy-friendly image tools for iOS and Android. All processing happens on your device — nothing is uploaded.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Format Conversion** — Convert between JPEG, PNG, WebP, HEIC, BMP, TIFF, and AVIF
+- **Quality Control** — Adjustable quality slider for lossy formats
+- **Metadata Preservation** — Option to keep or strip EXIF data
+- **Conversion History** — View past conversions with thumbnails and stats
+- **Dark Mode** — System, light, or dark theme
+- **Haptic Feedback** — Configurable tactile feedback
 
-   ```bash
-   npm install
-   ```
+### Supported Conversions
 
-2. Start the app
+| Source | Targets | Platform |
+|--------|---------|----------|
+| JPEG | PNG | iOS + Android |
+| PNG | JPEG | iOS + Android |
+| WebP | PNG, JPEG | iOS + Android |
+| HEIC | JPEG, PNG | iOS + Android |
+| BMP | PNG | iOS + Android |
+| JPEG, PNG | HEIC | iOS only |
+| TIFF | JPEG, PNG | iOS only |
+| AVIF | JPEG, PNG | iOS + Android |
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+- **Expo SDK 54**
+- **React Native 0.81** + React 19 + React Compiler
+- **expo-router** — file-based navigation
+- **Zustand** — state management with AsyncStorage persistence
+- **expo-image-manipulator** — core format conversion
+- **react-native-heic-converter** — HEIC decode
+- **react-native-compressor** — HEIC encode (iOS)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Getting Started
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Prerequisites
 
-## Get a fresh project
+- Node.js 18+
+- Android Studio (for Android) or Xcode (for iOS)
 
-When you're ready, run:
+### Install
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Run (Development Build)
 
-## Learn more
+This app uses native modules and requires a development build (not Expo Go).
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx expo prebuild
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+npx expo run:android
 
-## Join the community
+npx expo run:ios
+```
 
-Join our community of developers creating universal apps.
+### Build Standalone APK
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The debug APK requires Metro bundler running. To build a standalone APK with the JS bundle embedded:
+
+```bash
+cd android && ./gradlew assembleRelease
+```
+
+Output: `android/app/build/outputs/apk/release/app-release.apk`
+
+Transfer this to your phone and install, or use:
+
+```bash
+adb install android/app/build/outputs/apk/release/app-release.apk
+```
+
+## Project Structure
+
+```
+app/                          # Screens (expo-router)
+  (tabs)/                     # Tab navigation: Home, History, Settings
+  convert/                    # Conversion flow: Pick, Processing, Result
+src/
+  services/                   # Image processor, file manager
+  utils/                      # Format detection, conversion matrix, error handling
+  hooks/                      # Image picker, conversion orchestration
+  stores/                     # Zustand stores (image, history, settings)
+  components/                 # UI components (button, chip, card, etc.)
+  constants/                  # Format definitions, tool definitions
+  types/                      # TypeScript types
+constants/                    # Theme colors
+```

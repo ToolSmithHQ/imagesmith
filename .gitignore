@@ -30,6 +30,13 @@ yarn-error.*
 .DS_Store
 *.pem
 
+# IDE
+.idea/
+
+# Project docs (not committed)
+PLAN.md
+PROGRESS.md
+
 # local env files
 .env*.local
 

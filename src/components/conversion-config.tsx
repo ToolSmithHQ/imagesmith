@@ -2,7 +2,7 @@ import { View, Text, Switch, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { ImageFormat } from '@/src/types/formats';
 import { FORMAT_DISPLAY } from '@/src/constants/formats';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
 
 interface ConversionConfigProps {
   targetFormat: ImageFormat;

@@ -9,6 +9,14 @@ export interface ToolDefinition {
 
 export const TOOLS: ToolDefinition[] = [
   {
+    id: 'editor',
+    title: 'Editor',
+    description: 'Combine multiple tools in one workflow',
+    icon: 'slider.horizontal.3',
+    route: '/editor',
+    enabled: true,
+  },
+  {
     id: 'convert',
     title: 'Convert Format',
     description: 'Change image format (JPEG, PNG, WebP, HEIC, BMP)',
@@ -22,7 +30,7 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Reduce image file size',
     icon: 'arrow.down.right.and.arrow.up.left',
     route: '/compress',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'resize',
@@ -30,7 +38,7 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Change image dimensions',
     icon: 'arrow.up.left.and.arrow.down.right',
     route: '/resize',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'crop',
@@ -38,7 +46,7 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Crop and trim images',
     icon: 'crop',
     route: '/crop',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'rotate',
@@ -46,7 +54,7 @@ export const TOOLS: ToolDefinition[] = [
     description: 'Rotate or flip images',
     icon: 'rotate.right',
     route: '/rotate',
-    enabled: false,
+    enabled: true,
   },
   {
     id: 'metadata',
@@ -54,6 +62,6 @@ export const TOOLS: ToolDefinition[] = [
     description: 'View or remove EXIF data',
     icon: 'info.circle',
     route: '/metadata',
-    enabled: false,
+    enabled: true,
   },
 ];

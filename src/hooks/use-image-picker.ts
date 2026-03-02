@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { Image } from 'react-native';
 import { ImageAsset } from '@/src/types/image';
+import { getImageDimensions } from '@/src/services/image-processor';
 import {
   detectFormat,
   detectFormatFromBytes,
@@ -105,16 +105,4 @@ export function useImagePickerHook() {
   }, [setSourceImage]);
 
   return { pickFromGallery, pickFromFiles, isPickerOpen };
-}
-
-function getImageDimensions(
-  uri: string,
-): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    Image.getSize(
-      uri,
-      (width, height) => resolve({ width, height }),
-      (error) => reject(error),
-    );
-  });
 }

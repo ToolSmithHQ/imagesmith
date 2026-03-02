@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { IconSymbol } from '@/src/components/ui/icon-symbol';
+import { useThemeColor } from '@/src/hooks/use-theme-color';
+import { Typography, Spacing } from '@/src/constants/theme';
 
 interface EmptyStateProps {
   icon: string;
@@ -10,13 +11,16 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, message }: EmptyStateProps) {
   const textColor = useThemeColor({}, 'text');
-  const iconColor = useThemeColor({}, 'icon');
+  const onSurfaceVariant = useThemeColor({}, 'onSurfaceVariant');
+  const surfaceContainer = useThemeColor({}, 'surfaceContainer');
 
   return (
     <View style={styles.container}>
-      <IconSymbol name={icon as any} size={48} color={iconColor} />
+      <View style={[styles.iconCircle, { backgroundColor: surfaceContainer }]}>
+        <IconSymbol name={icon as any} size={32} color={onSurfaceVariant} />
+      </View>
       <Text style={[styles.title, { color: textColor }]}>{title}</Text>
-      <Text style={[styles.message, { color: iconColor }]}>{message}</Text>
+      <Text style={[styles.message, { color: onSurfaceVariant }]}>{message}</Text>
     </View>
   );
 }
@@ -26,17 +30,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
-    padding: 32,
+    gap: Spacing.md,
+    padding: Spacing.xxxl,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...Typography.titleLarge,
     textAlign: 'center',
   },
   message: {
-    fontSize: 14,
+    ...Typography.bodyMedium,
     textAlign: 'center',
-    lineHeight: 20,
   },
 });

@@ -4,14 +4,13 @@ import { ImageFormat } from '@/src/types/formats';
 import {
   ImageAsset,
   ConversionOptions,
-  ConversionResult,
+  ToolResult,
 } from '@/src/types/image';
 import { getConversionPath } from '@/src/utils/conversion-matrix';
 import { createProcessingError } from '@/src/utils/error-handler';
 import {
   ensureCacheDir,
   generateId,
-  generateOutputUri,
   getFileSize,
 } from '@/src/services/file-manager';
 import { Image } from 'react-native';
@@ -20,7 +19,7 @@ export async function convertImage(
   source: ImageAsset,
   options: ConversionOptions,
   onProgress?: (progress: number) => void,
-): Promise<ConversionResult> {
+): Promise<ToolResult> {
   const startTime = Date.now();
   const conversionPath = getConversionPath(source.format, options.targetFormat);
 
@@ -71,9 +70,10 @@ export async function convertImage(
 
   return {
     id: generateId(),
+    tool: 'convert',
     source,
     output: outputAsset,
-    options,
+    options: { tool: 'convert', config: options },
     processingTimeMs: Date.now() - startTime,
     timestamp: Date.now(),
   };
@@ -127,7 +127,7 @@ async function convertWithHeicConverter(
   return result.path;
 }
 
-async function buildOutputAsset(
+export async function buildOutputAsset(
   uri: string,
   format: ImageFormat,
 ): Promise<ImageAsset> {
@@ -135,7 +135,7 @@ async function buildOutputAsset(
   const { width, height } = await getImageDimensions(uri);
 
   const ext = format === ImageFormat.JPEG ? 'jpg' : format;
-  const fileName = uri.split('/').pop() ?? `converted.${ext}`;
+  const fileName = uri.split('/').pop() ?? `output.${ext}`;
 
   return {
     uri,
@@ -148,7 +148,7 @@ async function buildOutputAsset(
   };
 }
 
-function getImageDimensions(
+export function getImageDimensions(
   uri: string,
 ): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {

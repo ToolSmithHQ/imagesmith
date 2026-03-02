@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
+import { ScrollView, Text, View, Alert, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -8,14 +8,10 @@ import { ResultActions } from '@/src/components/result-actions';
 import { Chip } from '@/src/components/ui/chip';
 import { FORMAT_DISPLAY } from '@/src/constants/formats';
 import { saveToGallery, shareImage } from '@/src/services/file-manager';
-import { useThemeColor } from '@/hooks/use-theme-color';
-
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
-}
+import { useThemeColor } from '@/src/hooks/use-theme-color';
+import { NotificationFeedbackType } from 'expo-haptics';
+import { triggerNotification } from '@/src/utils/haptics';
+import { formatFileSize } from '@/src/utils/format-file-size';
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -49,13 +45,22 @@ export default function ResultScreen() {
     setSaving(true);
     try {
       await saveToGallery(output.uri);
+      triggerNotification();
+      Alert.alert('Saved', 'Image saved to your gallery.');
+    } catch {
+      triggerNotification(NotificationFeedbackType.Error);
+      Alert.alert('Save Failed', 'Could not save the image. Check gallery permissions.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleShare = () => {
-    shareImage(output.uri);
+  const handleShare = async () => {
+    try {
+      await shareImage(output.uri);
+    } catch {
+      Alert.alert('Share Failed', 'Could not share the image.');
+    }
   };
 
   const handleConvertAnother = () => {
