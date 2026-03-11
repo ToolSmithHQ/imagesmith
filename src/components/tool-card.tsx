@@ -23,6 +23,11 @@ export function ToolCard({ tool }: ToolCardProps) {
     'surfaceContainer',
   );
 
+  const androidBg = useThemeColor(
+    { light: '#FFFFFF', dark: '#1E1E28' },
+    'surfaceContainer',
+  );
+
   const handlePress = () => {
     if (!tool.enabled) return;
     triggerImpact();
@@ -35,23 +40,37 @@ export function ToolCard({ tool }: ToolCardProps) {
       disabled={!tool.enabled}
       style={[styles.card, !tool.enabled && styles.disabled]}
     >
-      <BlurView
-        intensity={Platform.OS === 'ios' ? 70 : 100}
-        tint="default"
-        style={StyleSheet.absoluteFillObject}
-      >
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          intensity={70}
+          tint="default"
+          style={StyleSheet.absoluteFillObject}
+        >
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              {
+                backgroundColor: glassBg,
+                borderRadius: Radius.xl,
+                borderWidth: 0.5,
+                borderColor: 'rgba(150,150,150,0.18)',
+              },
+            ]}
+          />
+        </BlurView>
+      ) : (
         <View
           style={[
             StyleSheet.absoluteFillObject,
             {
-              backgroundColor: glassBg,
+              backgroundColor: androidBg,
               borderRadius: Radius.xl,
               borderWidth: 0.5,
               borderColor: 'rgba(150,150,150,0.18)',
             },
           ]}
         />
-      </BlurView>
+      )}
 
       <View style={styles.content}>
         <View style={[styles.iconContainer, { backgroundColor: `${tint}15` }]}>
