@@ -145,7 +145,7 @@ export default function SettingsScreen() {
 
         <SectionCard title="About">
           <Text style={[styles.aboutText, { color: onSurfaceVariant }]}>
-            Image Smith v0.0.1
+            Image Smith v0.0.2
           </Text>
           <Text style={[styles.aboutText, { color: onSurfaceVariant }]}>
             Forged for privacy. Image Smith processes everything locally on your device—no servers, no tracking, no exceptions.

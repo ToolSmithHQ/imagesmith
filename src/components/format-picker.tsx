@@ -9,7 +9,7 @@ import { useThemeColor } from '@/src/hooks/use-theme-color';
 interface FormatPickerProps {
   sourceFormat: ImageFormat;
   selectedTarget: ImageFormat | null;
-  onSelectTarget: (format: ImageFormat) => void;
+  onSelectTarget: (format: ImageFormat, label?: string) => void;
 }
 
 interface TargetEntry {
@@ -68,7 +68,7 @@ export function FormatPicker({
                 selected={selected}
                 onPress={() => {
                   setActiveKey(entry.key);
-                  onSelectTarget(entry.format);
+                  onSelectTarget(entry.format, entry.label);
                 }}
               />
             );

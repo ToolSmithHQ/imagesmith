@@ -49,3 +49,34 @@ jest.mock('expo-sharing', () => ({
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
+
+// Mock @shopify/react-native-skia
+const mockPath = {
+  moveTo: jest.fn().mockReturnThis(),
+  lineTo: jest.fn().mockReturnThis(),
+  close: jest.fn().mockReturnThis(),
+  addCircle: jest.fn().mockReturnThis(),
+  cubicTo: jest.fn().mockReturnThis(),
+};
+
+jest.mock('@shopify/react-native-skia', () => ({
+  Skia: {
+    Path: { Make: jest.fn(() => ({ ...mockPath })) },
+    Color: jest.fn((c) => c),
+    Paint: jest.fn(() => ({
+      setColor: jest.fn(),
+      setStyle: jest.fn(),
+      setStrokeWidth: jest.fn(),
+      setStrokeCap: jest.fn(),
+      setStrokeJoin: jest.fn(),
+      setAntiAlias: jest.fn(),
+      setBlendMode: jest.fn(),
+    })),
+    Data: { fromBase64: jest.fn() },
+    Image: { MakeImageFromEncoded: jest.fn() },
+    Surface: { MakeOffscreen: jest.fn() },
+    XYWHRect: jest.fn((x, y, w, h) => ({ x, y, width: w, height: h })),
+  },
+  ClipOp: { Intersect: 0, Difference: 1 },
+  ImageFormat: { PNG: 'png', JPEG: 'jpeg' },
+}));

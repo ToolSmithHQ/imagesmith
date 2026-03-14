@@ -42,9 +42,9 @@ describe('conversion-matrix', () => {
       expect(targets).toHaveLength(0);
     });
 
-    it('includes HEIC target for JPEG on iOS', () => {
+    it('does not include HEIC as a target (no library supports HEIC encoding)', () => {
       const targets = getAvailableTargets(ImageFormat.JPEG);
-      expect(targets).toContain(ImageFormat.HEIC);
+      expect(targets).not.toContain(ImageFormat.HEIC);
     });
   });
 
@@ -58,7 +58,7 @@ describe('conversion-matrix', () => {
     it('returns a path for HEIC → JPEG', () => {
       const path = getConversionPath(ImageFormat.HEIC, ImageFormat.JPEG);
       expect(path).not.toBeNull();
-      expect(path!.library).toBe('react-native-heic-converter');
+      expect(path!.library).toBe('expo-image-manipulator');
     });
 
     it('returns null for unsupported conversion (JPEG → JPEG)', () => {

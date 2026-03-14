@@ -35,9 +35,12 @@ export default function ResultScreen() {
     );
   }
 
-  const { source, output, processingTimeMs } = currentResult;
+  const { source, output, processingTimeMs, options } = currentResult;
   const sourceDisplay = FORMAT_DISPLAY[source.format];
   const outputDisplay = FORMAT_DISPLAY[output.format];
+  const targetLabel = options.tool === 'convert' && options.config.targetLabel
+    ? options.config.targetLabel
+    : outputDisplay.label;
   const sizeDiff = output.fileSize - source.fileSize;
   const sizeDiffPercent = Math.round((sizeDiff / source.fileSize) * 100);
 
@@ -100,7 +103,7 @@ export default function ResultScreen() {
               contentFit="contain"
             />
             <Chip
-              label={outputDisplay.label}
+              label={targetLabel}
               color={outputDisplay.color}
               selected
             />

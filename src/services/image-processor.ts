@@ -14,6 +14,7 @@ import {
   getFileSize,
 } from '@/src/services/file-manager';
 import { Image } from 'react-native';
+import { FORMAT_MIME_MAP } from '@/src/types/formats';
 
 export async function convertImage(
   source: ImageAsset,
@@ -83,15 +84,16 @@ async function convertWithManipulator(
   source: ImageAsset,
   options: ConversionOptions,
 ): Promise<string> {
-  const format =
-    options.targetFormat === ImageFormat.PNG
-      ? ImageManipulator.SaveFormat.PNG
-      : ImageManipulator.SaveFormat.JPEG;
+  const formatMap: Record<string, ImageManipulator.SaveFormat> = {
+    [ImageFormat.PNG]: ImageManipulator.SaveFormat.PNG,
+    [ImageFormat.WEBP]: ImageManipulator.SaveFormat.WEBP,
+  };
+  const format = formatMap[options.targetFormat] ?? ImageManipulator.SaveFormat.JPEG;
+  const isLossy = format !== ImageManipulator.SaveFormat.PNG;
 
   const result = await ImageManipulator.manipulateAsync(source.uri, [], {
     format,
-    compress:
-      options.targetFormat === ImageFormat.JPEG ? options.quality : undefined,
+    compress: isLossy ? options.quality : undefined,
   });
 
   return result.uri;
@@ -144,7 +146,7 @@ export async function buildOutputAsset(
     width,
     height,
     fileSize,
-    mimeType: `image/${format}`,
+    mimeType: FORMAT_MIME_MAP[format],
   };
 }
 

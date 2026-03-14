@@ -1,8 +1,8 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import { ImageAsset, ResizeOptions, ToolResult } from '@/src/types/image';
-import { ImageFormat } from '@/src/types/formats';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
+import { getSaveOptions, getOutputFormat, getOutputMimeType } from '@/src/utils/save-format';
 
 export async function resizeImage(
   source: ImageAsset,
@@ -25,14 +25,8 @@ export async function resizeImage(
   onProgress?.(0.3);
 
   try {
-    const isLossless =
-      source.format === ImageFormat.PNG ||
-      source.format === ImageFormat.BMP ||
-      source.format === ImageFormat.TIFF;
-
-    const saveOptions: ImageManipulator.SaveOptions = isLossless
-      ? { format: ImageManipulator.SaveFormat.PNG }
-      : { format: ImageManipulator.SaveFormat.JPEG, compress: reEncodingQuality };
+    const saveOptions = getSaveOptions(source.format, reEncodingQuality);
+    const outputFormat = getOutputFormat(source.format);
 
     const result = await ImageManipulator.manipulateAsync(
       source.uri,
@@ -46,11 +40,11 @@ export async function resizeImage(
     const output: ImageAsset = {
       uri: result.uri,
       fileName: result.uri.split('/').pop() ?? 'resized.png',
-      format: source.format,
+      format: outputFormat,
       width: result.width,
       height: result.height,
       fileSize,
-      mimeType: source.mimeType,
+      mimeType: getOutputMimeType(source.format),
     };
 
     onProgress?.(1.0);

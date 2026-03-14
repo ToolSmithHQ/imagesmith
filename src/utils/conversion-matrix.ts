@@ -36,14 +36,28 @@ const CONVERSION_PATHS: ConversionPath[] = [
     target: ImageFormat.JPEG,
     phase: 1,
     platformSupport: { ios: true, android: true },
-    library: 'react-native-heic-converter',
+    library: 'expo-image-manipulator',
   },
   {
     source: ImageFormat.HEIC,
     target: ImageFormat.PNG,
     phase: 1,
     platformSupport: { ios: true, android: true },
-    library: 'react-native-heic-converter',
+    library: 'expo-image-manipulator',
+  },
+  {
+    source: ImageFormat.JPEG,
+    target: ImageFormat.WEBP,
+    phase: 1,
+    platformSupport: { ios: true, android: true },
+    library: 'expo-image-manipulator',
+  },
+  {
+    source: ImageFormat.PNG,
+    target: ImageFormat.WEBP,
+    phase: 1,
+    platformSupport: { ios: true, android: true },
+    library: 'expo-image-manipulator',
   },
   {
     source: ImageFormat.BMP,
@@ -54,20 +68,6 @@ const CONVERSION_PATHS: ConversionPath[] = [
   },
 
   // Phase 2: Extended
-  {
-    source: ImageFormat.JPEG,
-    target: ImageFormat.HEIC,
-    phase: 2,
-    platformSupport: { ios: true, android: false },
-    library: 'react-native-compressor',
-  },
-  {
-    source: ImageFormat.PNG,
-    target: ImageFormat.HEIC,
-    phase: 2,
-    platformSupport: { ios: true, android: false },
-    library: 'react-native-compressor',
-  },
   {
     source: ImageFormat.TIFF,
     target: ImageFormat.JPEG,

@@ -14,8 +14,11 @@ export interface ImageAsset {
 
 export type ToolType = 'convert' | 'crop' | 'rotate' | 'resize' | 'compress' | 'metadata';
 
+export type ShapeType = 'circle' | 'triangle' | 'star' | 'heart' | 'hexagon' | 'brush';
+
 export interface ConversionOptions {
   targetFormat: ImageFormat;
+  targetLabel?: string;
   quality: number;
   preserveExif: boolean;
 }
@@ -28,6 +31,8 @@ export interface CropOptions {
   rotation: number;
   flipHorizontal: boolean;
   flipVertical: boolean;
+  shape: ShapeType | null;
+  brushStrokes?: { x: number; y: number }[][]; // array of strokes, each stroke is normalized 0-1 points
 }
 
 export interface ResizeOptions {

@@ -41,6 +41,7 @@ export function useToolProcessing() {
           result = await convertImage(sourceImage, conversionOptions, onProgress);
           break;
         case 'crop':
+        case 'rotate':
           result = await cropRotateFlipImage(sourceImage, cropOptions, onProgress, reEncodingQuality);
           break;
         case 'resize':

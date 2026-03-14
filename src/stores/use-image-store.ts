@@ -34,7 +34,7 @@ interface ImageState {
   reset: () => void;
 
   // Convert actions
-  setTargetFormat: (format: ImageFormat) => void;
+  setTargetFormat: (format: ImageFormat, label?: string) => void;
   setQuality: (quality: number) => void;
   setPreserveExif: (preserve: boolean) => void;
 
@@ -68,6 +68,7 @@ const DEFAULT_CROP: CropOptions = {
   rotation: 0,
   flipHorizontal: false,
   flipVertical: false,
+  shape: null,
 };
 
 const DEFAULT_RESIZE: ResizeOptions = {
@@ -143,9 +144,9 @@ export const useImageStore = create<ImageState>((set) => ({
     }),
 
   // Convert
-  setTargetFormat: (format) =>
+  setTargetFormat: (format, label) =>
     set((state) => ({
-      conversionOptions: { ...state.conversionOptions, targetFormat: format },
+      conversionOptions: { ...state.conversionOptions, targetFormat: format, targetLabel: label },
     })),
 
   setQuality: (quality) =>

@@ -5,9 +5,16 @@ Privacy-friendly image tools for iOS and Android. All processing happens on your
 ## Features
 
 - **Format Conversion** — Convert between JPEG, PNG, WebP, HEIC, BMP, TIFF, and AVIF
+- **Crop** — Rectangular crop with aspect ratio presets (Free, 1:1, 4:3, 3:2, 16:9)
+- **Shape Crop** — Crop to circle, triangle, star, heart, or hexagon shapes
+- **Brush Crop** — Freehand paint the area to keep, everything else becomes transparent
+- **Rotate / Flip** — Rotate by any angle, flip horizontal or vertical
+- **Resize** — Custom dimensions with aspect ratio lock
+- **Compress** — Reduce file size with adjustable quality
+- **Strip Metadata** — Remove EXIF data (GPS, camera info, timestamps)
+- **Editor** — Multi-tool editor: apply multiple operations in sequence with undo, then export as JPEG, PNG, or WebP
 - **Quality Control** — Adjustable quality slider for lossy formats
-- **Metadata Preservation** — Option to keep or strip EXIF data
-- **Conversion History** — View past conversions with thumbnails and stats
+- **Conversion History** — View past operations with thumbnails and stats
 - **Dark Mode** — System, light, or dark theme
 - **Haptic Feedback** — Configurable tactile feedback
 
@@ -15,12 +22,11 @@ Privacy-friendly image tools for iOS and Android. All processing happens on your
 
 | Source | Targets | Platform |
 |--------|---------|----------|
-| JPEG | PNG | iOS + Android |
-| PNG | JPEG | iOS + Android |
+| JPEG | PNG, WebP | iOS + Android |
+| PNG | JPEG, WebP | iOS + Android |
 | WebP | PNG, JPEG | iOS + Android |
 | HEIC | JPEG, PNG | iOS + Android |
 | BMP | PNG | iOS + Android |
-| JPEG, PNG | HEIC | iOS only |
 | TIFF | JPEG, PNG | iOS only |
 | AVIF | JPEG, PNG | iOS + Android |
 
@@ -30,9 +36,9 @@ Privacy-friendly image tools for iOS and Android. All processing happens on your
 - **React Native 0.81** + React 19 + React Compiler
 - **expo-router** — file-based navigation
 - **Zustand** — state management with AsyncStorage persistence
-- **expo-image-manipulator** — core format conversion
-- **react-native-heic-converter** — HEIC decode
-- **react-native-compressor** — HEIC encode (iOS)
+- **expo-image-manipulator** — format conversion, crop, rotate, flip, resize
+- **@shopify/react-native-skia** — GPU-accelerated shape/brush crop with path clipping
+- **react-native-compressor** — image compression
 
 ## Getting Started
 
@@ -61,18 +67,17 @@ npx expo run:ios
 
 ### Build Standalone APK
 
-The debug APK requires Metro bundler running. To build a standalone APK with the JS bundle embedded:
-
 ```bash
 cd android && ./gradlew assembleRelease
 ```
 
 Output: `android/app/build/outputs/apk/release/app-release.apk`
 
-Transfer this to your phone and install, or use:
+### Build for iOS
 
 ```bash
-adb install android/app/build/outputs/apk/release/app-release.apk
+eas build --platform ios --profile production
+eas submit --platform ios
 ```
 
 ## Project Structure
@@ -81,13 +86,18 @@ adb install android/app/build/outputs/apk/release/app-release.apk
 app/                          # Screens (expo-router)
   (tabs)/                     # Tab navigation: Home, History, Settings
   convert/                    # Conversion flow: Pick, Processing, Result
+  crop/                       # Crop flow (rectangular + shape + brush)
+  rotate/                     # Rotate / Flip flow
+  resize/                     # Resize flow
+  compress/                   # Compress flow
+  metadata/                   # Metadata view / strip flow
+  editor/                     # Multi-tool editor
 src/
-  services/                   # Image processor, file manager
-  utils/                      # Format detection, conversion matrix, error handling
-  hooks/                      # Image picker, conversion orchestration
+  services/                   # Processors (crop, resize, compress, convert, metadata)
+  utils/                      # Format detection, conversion matrix, save format, error handling
+  hooks/                      # Image picker, tool processing orchestration
   stores/                     # Zustand stores (image, history, settings)
-  components/                 # UI components (button, chip, card, etc.)
-  constants/                  # Format definitions, tool definitions
+  components/                 # UI components (crop overlay, rotate config, format picker, etc.)
+  constants/                  # Format definitions, tool definitions, shape definitions, theme
   types/                      # TypeScript types
-constants/                    # Theme colors
 ```

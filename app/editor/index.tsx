@@ -24,10 +24,13 @@ import { Button } from '@/src/components/ui/button';
 import { QualitySlider } from '@/src/components/ui/quality-slider';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
 import { triggerImpact, triggerNotification } from '@/src/utils/haptics';
-import { ImageAsset, ToolResult } from '@/src/types/image';
+import { ImageAsset, ToolResult, ShapeType } from '@/src/types/image';
+import { ImageFormat } from '@/src/types/formats';
+import { SHAPES } from '@/src/constants/shapes';
 import { compressImage } from '@/src/services/compress-processor';
 import { resizeImage } from '@/src/services/resize-processor';
 import { cropRotateFlipImage } from '@/src/services/crop-processor';
+import { convertImage } from '@/src/services/image-processor';
 import { stripMetadata } from '@/src/services/metadata-processor';
 import { saveToGallery, shareImage } from '@/src/services/file-manager';
 import { FORMAT_DISPLAY } from '@/src/constants/formats';
@@ -96,6 +99,9 @@ export default function EditorScreen() {
     width: 0,
     height: 0,
   });
+  const [editorShape, setEditorShape] = useState<ShapeType | null>(null);
+  const [editorBrushStrokes, setEditorBrushStrokes] = useState<{ x: number; y: number }[][]>([]);
+  const [exportFormat, setExportFormat] = useState<ImageFormat | null>(null);
 
   const isFirstRender = useRef(true);
 
@@ -108,10 +114,16 @@ export default function EditorScreen() {
       isFirstRender.current = false;
       return;
     }
-    if (sourceImage && !currentImage) {
+    if (sourceImage) {
       setCurrentImage(sourceImage);
+      setImageStack([]);
+      setOperations([]);
+      setActiveTool(null);
+      setExportFormat(null);
       setResizeW(sourceImage.width);
       setResizeH(sourceImage.height);
+      setEditorShape(null);
+      setEditorBrushStrokes([]);
     }
   }, [sourceImage]);
 
@@ -122,6 +134,7 @@ export default function EditorScreen() {
       return;
     }
     setActiveTool(tool);
+    setEditorShape(null);
     if (currentImage) {
       if (tool === 'resize') {
         setResizeW(currentImage.width);
@@ -160,6 +173,7 @@ export default function EditorScreen() {
             rotation,
             flipHorizontal: flipH,
             flipVertical: flipV,
+            shape: null,
           }, undefined, reEncodingQuality);
           break;
         case 'strip':
@@ -171,6 +185,8 @@ export default function EditorScreen() {
             rotation: 0,
             flipHorizontal: false,
             flipVertical: false,
+            shape: editorShape,
+            brushStrokes: editorShape === 'brush' ? editorBrushStrokes : undefined,
           }, undefined, reEncodingQuality);
           break;
         default:
@@ -199,11 +215,23 @@ export default function EditorScreen() {
     setActiveTool(null);
   };
 
+  const getExportUri = async (): Promise<string> => {
+    if (!currentImage) throw new Error('No image');
+    if (!exportFormat || exportFormat === currentImage.format) return currentImage.uri;
+    const result = await convertImage(currentImage, {
+      targetFormat: exportFormat,
+      quality: 0.95,
+      preserveExif: true,
+    });
+    return result.output.uri;
+  };
+
   const handleSave = async () => {
     if (!currentImage) return;
     setSaving(true);
     try {
-      await saveToGallery(currentImage.uri);
+      const uri = await getExportUri();
+      await saveToGallery(uri);
       triggerNotification();
       Alert.alert('Saved', 'Image saved to your gallery.');
     } catch {
@@ -214,9 +242,14 @@ export default function EditorScreen() {
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!currentImage) return;
-    shareImage(currentImage.uri);
+    try {
+      const uri = await getExportUri();
+      await shareImage(uri);
+    } catch {
+      Alert.alert('Share Failed', 'Could not share the image.');
+    }
   };
 
   if (!currentImage) {
@@ -256,6 +289,7 @@ export default function EditorScreen() {
         return rotation !== 0 || flipH || flipV;
       case 'crop':
         return (
+          (editorShape === 'brush' ? editorBrushStrokes.length > 0 : editorShape !== null) ||
           cropRegion.originX > 0 ||
           cropRegion.originY > 0 ||
           cropRegion.width < currentImage.width ||
@@ -273,10 +307,12 @@ export default function EditorScreen() {
         <View style={[styles.previewArea, { backgroundColor: surfaceDim }]}>
           {activeTool === 'crop' ? (
             <CropOverlay
-              key={currentImage.uri}
+              key={`${currentImage.uri}-${editorShape}`}
               image={currentImage}
-              aspectRatio={null}
+              aspectRatio={editorShape && editorShape !== 'brush' ? 1 : null}
+              shape={editorShape}
               onCropChange={setCropRegion}
+              onBrushStrokes={setEditorBrushStrokes}
             />
           ) : activeTool === 'rotate' ? (
             <View style={styles.rotatePreview}>
@@ -370,19 +406,63 @@ export default function EditorScreen() {
 
               {/* Save/Share when operations exist */}
               {operations.length > 0 && (
-                <View style={styles.saveRow}>
-                  <View style={{ flex: 1 }}>
-                    <Button
-                      variant="primary"
-                      title={saving ? 'Saving...' : 'Save to Gallery'}
-                      onPress={handleSave}
-                      disabled={saving}
-                    />
+                <>
+                  <View style={styles.exportFormatSection}>
+                    <Text style={[styles.exportFormatLabel, { color: onSurfaceVariant }]}>
+                      Save as
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.exportFormatRow}
+                    >
+                      {(() => {
+                        const currentFmt = currentImage?.format ?? ImageFormat.JPEG;
+                        const currentDisplay = FORMAT_DISPLAY[currentFmt];
+                        const formats: { format: ImageFormat | null; label: string; color: string }[] = [
+                          { format: null, label: currentDisplay.label, color: currentDisplay.color },
+                        ];
+                        const convertible = [ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP] as const;
+                        for (const fmt of convertible) {
+                          if (fmt !== currentFmt) {
+                            formats.push({ format: fmt, label: FORMAT_DISPLAY[fmt].label, color: FORMAT_DISPLAY[fmt].color });
+                          }
+                        }
+                        return formats.map((f) => {
+                          const active = exportFormat === f.format;
+                          return (
+                            <Pressable
+                              key={f.label}
+                              onPress={() => { triggerImpact(); setExportFormat(f.format); }}
+                              style={[
+                                styles.exportChip,
+                                { backgroundColor: active ? tintContainer : surfaceContainerLow },
+                              ]}
+                            >
+                              <View style={[styles.exportDot, { backgroundColor: f.color }]} />
+                              <Text style={[styles.exportChipText, { color: active ? tint : textColor }]}>
+                                {f.label}
+                              </Text>
+                            </Pressable>
+                          );
+                        });
+                      })()}
+                    </ScrollView>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Button variant="secondary" title="Share" onPress={handleShare} />
+                  <View style={styles.saveRow}>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        variant="primary"
+                        title={saving ? 'Saving...' : 'Save to Gallery'}
+                        onPress={handleSave}
+                        disabled={saving}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button variant="secondary" title="Share" onPress={handleShare} />
+                    </View>
                   </View>
-                </View>
+                </>
               )}
 
               <Pressable onPress={pickFromGallery} style={styles.changeImageRow}>
@@ -518,6 +598,41 @@ export default function EditorScreen() {
                   <Text style={[styles.configHint, { color: onSurfaceVariant }]}>
                     Drag corners or edges to adjust the crop area
                   </Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.shapesRow}
+                  >
+                    <Pressable
+                      onPress={() => { triggerImpact(); setEditorShape(null); }}
+                      style={[
+                        styles.shapeChip,
+                        { backgroundColor: editorShape === null ? tintContainer : surfaceContainerLow },
+                      ]}
+                    >
+                      <Text style={[styles.shapeChipText, { color: editorShape === null ? tint : textColor }]}>
+                        None
+                      </Text>
+                    </Pressable>
+                    {SHAPES.map((s) => {
+                      const active = editorShape === s.id;
+                      return (
+                        <Pressable
+                          key={s.id}
+                          onPress={() => { triggerImpact(); setEditorShape(s.id); setEditorBrushStrokes([]); }}
+                          style={[
+                            styles.shapeChip,
+                            { backgroundColor: active ? tintContainer : surfaceContainerLow },
+                          ]}
+                        >
+                          <IconSymbol name={s.icon as any} size={16} color={active ? tint : onSurfaceVariant} />
+                          <Text style={[styles.shapeChipText, { color: active ? tint : textColor }]}>
+                            {s.label}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
                   <QualitySlider
                     value={reEncodingQuality}
                     onValueChange={setReEncodingQuality}
@@ -686,6 +801,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
   },
+  exportFormatSection: {
+    gap: Spacing.xs,
+  },
+  exportFormatLabel: {
+    ...Typography.labelSmall,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  exportFormatRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  exportChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.xl,
+  },
+  exportDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  exportChipText: {
+    ...Typography.labelMedium,
+    fontWeight: '600',
+  },
 
   // Config header
   configHeader: {
@@ -769,6 +913,24 @@ const styles = StyleSheet.create({
   },
   quickBtnText: {
     ...Typography.labelSmall,
+    fontWeight: '600',
+  },
+
+  // Shapes
+  shapesRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  shapeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.xl,
+  },
+  shapeChipText: {
+    ...Typography.labelMedium,
     fontWeight: '600',
   },
 

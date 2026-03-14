@@ -7,12 +7,16 @@ import { useSettingsStore } from '@/src/stores/use-settings-store';
 import { useImagePickerHook } from '@/src/hooks/use-image-picker';
 import { ImagePickerView } from '@/src/components/image-picker-view';
 import { CropOverlay } from '@/src/components/crop-overlay';
-import { SectionCard } from '@/src/components/ui/section-card';
 import { QualitySlider } from '@/src/components/ui/quality-slider';
 import { Button } from '@/src/components/ui/button';
+import { IconSymbol } from '@/src/components/ui/icon-symbol';
 import { useThemeColor } from '@/src/hooks/use-theme-color';
 import { triggerImpact } from '@/src/utils/haptics';
+import { ShapeType } from '@/src/types/image';
+import { SHAPES } from '@/src/constants/shapes';
 import { Typography, Spacing, Radius } from '@/src/constants/theme';
+
+type CropMode = 'rect' | 'shape';
 
 const PRESETS: { label: string; value: number | null }[] = [
   { label: 'Free', value: null },
@@ -42,6 +46,9 @@ export default function CropScreen() {
   const { reEncodingQuality, setReEncodingQuality } = useSettingsStore();
   const { pickFromGallery } = useImagePickerHook();
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
+  const [cropMode, setCropMode] = useState<CropMode>('rect');
+  const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
+  const [brushStrokes, setBrushStrokes] = useState<{ x: number; y: number }[][]>([]);
 
   useEffect(() => {
     reset();
@@ -59,20 +66,56 @@ export default function CropScreen() {
 
   const hasChanges =
     sourceImage &&
-    (cropOptions.originX > 0 ||
-      cropOptions.originY > 0 ||
-      cropOptions.width < sourceImage.width ||
-      cropOptions.height < sourceImage.height);
+    (cropMode === 'shape'
+      ? selectedShape === 'brush'
+        ? brushStrokes.length > 0
+        : selectedShape !== null
+      : cropOptions.originX > 0 ||
+        cropOptions.originY > 0 ||
+        cropOptions.width < sourceImage.width ||
+        cropOptions.height < sourceImage.height);
 
   const handleApply = () => {
     if (!hasChanges) return;
     triggerImpact();
+    if (cropMode === 'shape' && selectedShape) {
+      if (selectedShape === 'brush') {
+        setCropOptions({ shape: 'brush', brushStrokes });
+      } else {
+        setCropOptions({ shape: selectedShape });
+      }
+    }
     router.push('/crop/processing' as any);
   };
 
   const selectPreset = (value: number | null) => {
     triggerImpact();
     setAspectRatio(value);
+  };
+
+  const handleModeChange = (mode: CropMode) => {
+    triggerImpact();
+    setCropMode(mode);
+    if (mode === 'shape') {
+      setAspectRatio(1);
+      setCropOptions({ shape: selectedShape });
+    } else {
+      setAspectRatio(null);
+      setSelectedShape(null);
+      setBrushStrokes([]);
+      setCropOptions({ shape: null, brushStrokes: undefined });
+    }
+  };
+
+  const handleShapeSelect = (shape: ShapeType) => {
+    triggerImpact();
+    setSelectedShape(shape);
+    setBrushStrokes([]);
+    setCropOptions({ shape, brushStrokes: undefined });
+  };
+
+  const handleBrushStrokes = (strokes: { x: number; y: number }[][]) => {
+    setBrushStrokes(strokes);
   };
 
   if (!sourceImage) {
@@ -93,55 +136,124 @@ export default function CropScreen() {
       <View style={styles.container}>
         <View style={styles.overlayContainer}>
           <CropOverlay
-            key={sourceImage.uri}
+            key={`${sourceImage.uri}-${cropMode}-${selectedShape}`}
             image={sourceImage}
-            aspectRatio={aspectRatio}
+            aspectRatio={cropMode === 'shape' && selectedShape !== 'brush' ? 1 : aspectRatio}
+            shape={cropMode === 'shape' ? selectedShape : null}
             onCropChange={handleCropChange}
+            onBrushStrokes={handleBrushStrokes}
           />
         </View>
 
         <View style={styles.controls}>
-          <View style={styles.presetsRow}>
-            {PRESETS.map((p) => {
-              const active =
-                p.value === aspectRatio ||
-                (p.value === null && aspectRatio === null);
-              return (
-                <Pressable
-                  key={p.label}
-                  onPress={() => selectPreset(p.value)}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: active ? tintContainer : surfaceContainerHigh,
-                    },
-                  ]}
-                >
-                  <Text
+          {/* Mode toggle */}
+          <View style={[styles.modeToggle, { backgroundColor: surfaceContainerHigh }]}>
+            <Pressable
+              onPress={() => handleModeChange('rect')}
+              style={[
+                styles.modeButton,
+                cropMode === 'rect' && { backgroundColor: tintContainer },
+              ]}
+            >
+              <Text style={[styles.modeText, { color: cropMode === 'rect' ? tint : textColor }]}>
+                Crop
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleModeChange('shape')}
+              style={[
+                styles.modeButton,
+                cropMode === 'shape' && { backgroundColor: tintContainer },
+              ]}
+            >
+              <Text style={[styles.modeText, { color: cropMode === 'shape' ? tint : textColor }]}>
+                Shape
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Aspect ratio presets (rect mode) or shape selector (shape mode) */}
+          {cropMode === 'rect' ? (
+            <View style={styles.presetsRow}>
+              {PRESETS.map((p) => {
+                const active =
+                  p.value === aspectRatio ||
+                  (p.value === null && aspectRatio === null);
+                return (
+                  <Pressable
+                    key={p.label}
+                    onPress={() => selectPreset(p.value)}
                     style={[
-                      styles.presetText,
-                      { color: active ? tint : textColor },
+                      styles.presetChip,
+                      {
+                        backgroundColor: active ? tintContainer : surfaceContainerHigh,
+                      },
                     ]}
                   >
-                    {p.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text
+                      style={[
+                        styles.presetText,
+                        { color: active ? tint : textColor },
+                      ]}
+                    >
+                      {p.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.shapesRow}
+            >
+              {SHAPES.map((s) => {
+                const active = selectedShape === s.id;
+                return (
+                  <Pressable
+                    key={s.id}
+                    onPress={() => handleShapeSelect(s.id)}
+                    style={[
+                      styles.shapeChip,
+                      {
+                        backgroundColor: active ? tintContainer : surfaceContainerHigh,
+                      },
+                    ]}
+                  >
+                    <IconSymbol
+                      name={s.icon as any}
+                      size={18}
+                      color={active ? tint : onSurfaceVariant}
+                    />
+                    <Text
+                      style={[
+                        styles.shapeText,
+                        { color: active ? tint : textColor },
+                      ]}
+                    >
+                      {s.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
 
           <Text style={[styles.info, { color: onSurfaceVariant }]}>
             {cropOptions.width} x {cropOptions.height}
           </Text>
 
-          <QualitySlider
-            value={reEncodingQuality}
-            onValueChange={setReEncodingQuality}
-          />
+          {cropMode === 'rect' && (
+            <QualitySlider
+              value={reEncodingQuality}
+              onValueChange={setReEncodingQuality}
+            />
+          )}
 
           <Button
             variant="primary"
-            title="Apply Crop"
+            title={cropMode === 'shape' ? 'Apply Shape Crop' : 'Apply Crop'}
             onPress={handleApply}
             disabled={!hasChanges}
           />
@@ -169,6 +281,21 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     gap: Spacing.md,
   },
+  modeToggle: {
+    flexDirection: 'row',
+    borderRadius: Radius.xl,
+    padding: 3,
+    alignSelf: 'center',
+  },
+  modeButton: {
+    paddingHorizontal: 20,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.lg,
+  },
+  modeText: {
+    ...Typography.labelLarge,
+    fontWeight: '600',
+  },
   presetsRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
@@ -180,6 +307,23 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
   },
   presetText: {
+    ...Typography.labelLarge,
+    fontWeight: '600',
+  },
+  shapesRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+  },
+  shapeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.xl,
+  },
+  shapeText: {
     ...Typography.labelLarge,
     fontWeight: '600',
   },
