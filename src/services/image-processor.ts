@@ -1,5 +1,4 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { Image as CompressorImage } from 'react-native-compressor';
 import { ImageFormat } from '@/src/types/formats';
 import {
   ImageAsset,
@@ -40,12 +39,6 @@ export async function convertImage(
     switch (conversionPath.library) {
       case 'expo-image-manipulator':
         outputUri = await convertWithManipulator(source, options);
-        break;
-      case 'react-native-compressor':
-        outputUri = await convertWithCompressor(source, options);
-        break;
-      case 'react-native-heic-converter':
-        outputUri = await convertWithHeicConverter(source, options);
         break;
       default:
         throw createProcessingError(
@@ -97,36 +90,6 @@ async function convertWithManipulator(
   });
 
   return result.uri;
-}
-
-async function convertWithCompressor(
-  source: ImageAsset,
-  options: ConversionOptions,
-): Promise<string> {
-  const result = await CompressorImage.compress(source.uri, {
-    compressionMethod: 'manual',
-    quality: options.quality,
-  });
-
-  return result;
-}
-
-async function convertWithHeicConverter(
-  source: ImageAsset,
-  options: ConversionOptions,
-): Promise<string> {
-  const RNHeicConverter =
-    require('react-native-heic-converter').default;
-
-  const extension = options.targetFormat === ImageFormat.PNG ? 'png' : 'jpg';
-
-  const result = await RNHeicConverter.convert({
-    path: source.uri,
-    quality: options.quality,
-    extension,
-  });
-
-  return result.path;
 }
 
 export async function buildOutputAsset(

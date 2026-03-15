@@ -50,5 +50,5 @@ export interface ConversionPath {
     ios: boolean;
     android: boolean;
   };
-  library: 'expo-image-manipulator' | 'react-native-heic-converter' | 'react-native-compressor';
+  library: 'expo-image-manipulator';
 }
