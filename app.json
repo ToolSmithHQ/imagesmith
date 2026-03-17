@@ -39,6 +39,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@toolsmith/imagecore-native",
       "expo-router",
       [
         "expo-splash-screen",

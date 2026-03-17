@@ -1,130 +1,30 @@
-import { Platform } from 'react-native';
-import { ImageFormat, ConversionPath } from '@/src/types/formats';
+import { ImageFormat } from '@/src/types/formats';
 
-const CONVERSION_PATHS: ConversionPath[] = [
-  // Phase 1: MVP conversions
-  {
-    source: ImageFormat.JPEG,
-    target: ImageFormat.PNG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.PNG,
-    target: ImageFormat.JPEG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.WEBP,
-    target: ImageFormat.PNG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.WEBP,
-    target: ImageFormat.JPEG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.HEIC,
-    target: ImageFormat.JPEG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.HEIC,
-    target: ImageFormat.PNG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.JPEG,
-    target: ImageFormat.WEBP,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.PNG,
-    target: ImageFormat.WEBP,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.BMP,
-    target: ImageFormat.PNG,
-    phase: 1,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
+/**
+ * With imagecore, all format conversions are supported on all platforms.
+ * No more per-platform restrictions or phase gating.
+ */
 
-  // Phase 2: Extended
-  {
-    source: ImageFormat.TIFF,
-    target: ImageFormat.JPEG,
-    phase: 2,
-    platformSupport: { ios: true, android: false },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.TIFF,
-    target: ImageFormat.PNG,
-    phase: 2,
-    platformSupport: { ios: true, android: false },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.AVIF,
-    target: ImageFormat.JPEG,
-    phase: 2,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
-  {
-    source: ImageFormat.AVIF,
-    target: ImageFormat.PNG,
-    phase: 2,
-    platformSupport: { ios: true, android: true },
-    library: 'expo-image-manipulator',
-  },
+const ALL_FORMATS = [
+  ImageFormat.JPEG,
+  ImageFormat.PNG,
+  ImageFormat.WEBP,
+  ImageFormat.HEIC,
+  ImageFormat.AVIF,
+  ImageFormat.TIFF,
+  ImageFormat.BMP,
 ];
 
-export function getConversionPath(
-  source: ImageFormat,
-  target: ImageFormat,
-): ConversionPath | null {
-  const platform = Platform.OS as 'ios' | 'android';
-
-  return (
-    CONVERSION_PATHS.find(
-      (path) =>
-        path.source === source &&
-        path.target === target &&
-        path.platformSupport[platform],
-    ) ?? null
-  );
-}
-
 export function getAvailableTargets(source: ImageFormat): ImageFormat[] {
-  const platform = Platform.OS as 'ios' | 'android';
-
-  return CONVERSION_PATHS.filter(
-    (path) => path.source === source && path.platformSupport[platform],
-  ).map((path) => path.target);
+  if (!ALL_FORMATS.includes(source)) return [];
+  return ALL_FORMATS.filter((f) => f !== source);
 }
 
 export function isConversionSupported(
   source: ImageFormat,
   target: ImageFormat,
 ): boolean {
-  return getConversionPath(source, target) !== null;
+  return source !== target &&
+    ALL_FORMATS.includes(source) &&
+    ALL_FORMATS.includes(target);
 }

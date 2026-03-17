@@ -1,8 +1,8 @@
-import * as ImageManipulator from 'expo-image-manipulator';
 import { ImageAsset, ResizeOptions, ToolResult } from '@/src/types/image';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
-import { getSaveOptions, getOutputFormat, getOutputMimeType } from '@/src/utils/save-format';
+import { resizeFile, getFileImageInfo } from '@/src/services/imagecore-bridge';
+import { FORMAT_MIME_MAP } from '@/src/types/formats';
 
 export async function resizeImage(
   source: ImageAsset,
@@ -25,26 +25,27 @@ export async function resizeImage(
   onProgress?.(0.3);
 
   try {
-    const saveOptions = getSaveOptions(source.format, reEncodingQuality);
-    const outputFormat = getOutputFormat(source.format);
-
-    const result = await ImageManipulator.manipulateAsync(
+    const outputUri = await resizeFile(
       source.uri,
-      [{ resize: { width: options.width, height: options.height } }],
-      saveOptions,
+      options.width,
+      options.height,
+      source.format,
+      reEncodingQuality,
     );
 
     onProgress?.(0.8);
 
-    const fileSize = getFileSize(result.uri);
+    const fileSize = getFileSize(outputUri);
+    const info = await getFileImageInfo(outputUri);
+
     const output: ImageAsset = {
-      uri: result.uri,
-      fileName: result.uri.split('/').pop() ?? 'resized.png',
-      format: outputFormat,
-      width: result.width,
-      height: result.height,
+      uri: outputUri,
+      fileName: outputUri.split('/').pop() ?? 'resized.png',
+      format: source.format,
+      width: info.width,
+      height: info.height,
       fileSize,
-      mimeType: getOutputMimeType(source.format),
+      mimeType: FORMAT_MIME_MAP[source.format],
     };
 
     onProgress?.(1.0);

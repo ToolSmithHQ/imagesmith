@@ -1,8 +1,8 @@
-import { Image as CompressorImage } from 'react-native-compressor';
 import { ImageAsset, CompressOptions, ToolResult } from '@/src/types/image';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
-import { getImageDimensions } from '@/src/services/image-processor';
+import { compressFile, getFileImageInfo } from '@/src/services/imagecore-bridge';
+import { FORMAT_MIME_MAP } from '@/src/types/formats';
 
 export async function compressImage(
   source: ImageAsset,
@@ -12,30 +12,23 @@ export async function compressImage(
   const startTime = Date.now();
   ensureCacheDir();
   onProgress?.(0.1);
-
   onProgress?.(0.3);
 
   try {
-    const result = await CompressorImage.compress(source.uri, {
-      compressionMethod: 'manual',
-      quality: options.quality,
-      maxWidth: options.maxWidth,
-      maxHeight: options.maxHeight,
-    });
-
+    const outputUri = await compressFile(source.uri, options.quality, source.format);
     onProgress?.(0.8);
 
-    const fileSize = getFileSize(result);
-    const { width, height } = await getImageDimensions(result);
+    const fileSize = getFileSize(outputUri);
+    const info = await getFileImageInfo(outputUri);
 
     const output: ImageAsset = {
-      uri: result,
-      fileName: result.split('/').pop() ?? 'compressed.jpg',
+      uri: outputUri,
+      fileName: outputUri.split('/').pop() ?? 'compressed.jpg',
       format: source.format,
-      width,
-      height,
+      width: info.width,
+      height: info.height,
       fileSize,
-      mimeType: source.mimeType,
+      mimeType: FORMAT_MIME_MAP[source.format],
     };
 
     onProgress?.(1.0);

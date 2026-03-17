@@ -1,14 +1,24 @@
 // Mock native modules that aren't available in test environment
 
-jest.mock('react-native-compressor', () => ({
-  Image: { compress: jest.fn() },
-  getImageMetaData: jest.fn(),
-}));
-
-jest.mock('expo-image-manipulator', () => ({
-  manipulateAsync: jest.fn(),
-  SaveFormat: { JPEG: 'jpeg', PNG: 'png' },
-  FlipType: { Horizontal: 'horizontal', Vertical: 'vertical' },
+jest.mock('@toolsmith/imagecore-native', () => ({
+  ImageCore: {
+    getImageInfo: jest.fn(() => ({ width: 100, height: 100, format: 'jpeg', hasExif: false, fileSize: 1024 })),
+    decode: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
+    encode: jest.fn(() => new ArrayBuffer(100)),
+    convert: jest.fn(() => new ArrayBuffer(100)),
+    jpegLosslessRotate: jest.fn(() => new ArrayBuffer(100)),
+    jpegLosslessCrop: jest.fn(() => new ArrayBuffer(100)),
+    jpegStripExif: jest.fn(() => new ArrayBuffer(100)),
+    stripExif: jest.fn(() => new ArrayBuffer(100)),
+    readExif: jest.fn(() => ({})),
+    resize: jest.fn(() => ({ width: 50, height: 50, free: jest.fn() })),
+    crop: jest.fn(() => ({ width: 50, height: 50, free: jest.fn() })),
+    rotate: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
+  },
+  ImageFormat: {
+    JPEG: 'jpeg', PNG: 'png', WEBP: 'webp', HEIC: 'heic',
+    AVIF: 'avif', TIFF: 'tiff', BMP: 'bmp', GIF: 'gif',
+  },
 }));
 
 jest.mock('expo-file-system', () => ({
@@ -22,11 +32,17 @@ jest.mock('expo-file-system', () => ({
 jest.mock('expo-file-system/next', () => ({
   File: jest.fn().mockImplementation(() => ({
     exists: true,
-    open: () => ({
-      readBytes: () => new Uint8Array(32),
-      close: () => {},
-    }),
+    size: 1024,
+    create: jest.fn(),
+    write: jest.fn(),
+    base64: jest.fn(() => Promise.resolve('')),
+    uri: 'file:///mock/test.jpg',
   })),
+  Directory: jest.fn().mockImplementation(() => ({
+    exists: true,
+    create: jest.fn(),
+  })),
+  Paths: { cache: '/mock/cache' },
 }));
 
 jest.mock('expo-haptics', () => ({
@@ -39,6 +55,10 @@ jest.mock('expo-haptics', () => ({
 jest.mock('expo-media-library', () => ({
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   saveToLibraryAsync: jest.fn(() => Promise.resolve()),
+  createAssetAsync: jest.fn(() => Promise.resolve({ uri: 'mock://asset' })),
+  getAlbumAsync: jest.fn(() => Promise.resolve(null)),
+  createAlbumAsync: jest.fn(() => Promise.resolve()),
+  addAssetsToAlbumAsync: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('expo-sharing', () => ({

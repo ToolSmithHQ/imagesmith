@@ -1,31 +1,29 @@
-import { getImageMetaData } from 'react-native-compressor';
-import * as ImageManipulator from 'expo-image-manipulator';
 import {
   ImageAsset,
   ExifData,
   MetadataResult,
   ToolResult,
 } from '@/src/types/image';
-import { ImageFormat } from '@/src/types/formats';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
+import { readFileExif, stripFileExif, getFileImageInfo } from '@/src/services/imagecore-bridge';
 
 export async function readMetadata(source: ImageAsset): Promise<MetadataResult> {
   try {
-    const metadata = await getImageMetaData(source.uri);
+    const info = await getFileImageInfo(source.uri);
+    const rawExif = await readFileExif(source.uri);
 
     const exifData: ExifData = {
       'Image Info': {
-        Width: metadata.ImageWidth,
-        Height: metadata.ImageHeight,
-        Orientation: metadata.Orientation,
-        'File Size': metadata.size,
-        Extension: metadata.extension,
+        Width: info.width,
+        Height: info.height,
+        Format: info.format,
+        'File Size': info.fileSize,
       },
     };
 
-    if (metadata.exif) {
-      exifData['EXIF Data'] = metadata.exif as Record<string, string | number | undefined>;
+    if (Object.keys(rawExif).length > 0) {
+      exifData['EXIF Data'] = rawExif as Record<string, string | number | undefined>;
     }
 
     return {
@@ -51,32 +49,18 @@ export async function stripMetadata(
   onProgress?.(0.2);
 
   try {
-    // Re-encoding with expo-image-manipulator strips EXIF data
-    // Use source format to avoid unnecessary format conversion
-    const isLossless =
-      source.format === ImageFormat.PNG ||
-      source.format === ImageFormat.BMP ||
-      source.format === ImageFormat.TIFF;
-
-    const saveOptions: ImageManipulator.SaveOptions = isLossless
-      ? { format: ImageManipulator.SaveFormat.PNG }
-      : { format: ImageManipulator.SaveFormat.JPEG, compress: 1.0 };
-
-    const result = await ImageManipulator.manipulateAsync(
-      source.uri,
-      [],
-      saveOptions,
-    );
-
+    const outputUri = await stripFileExif(source.uri);
     onProgress?.(0.8);
 
-    const fileSize = getFileSize(result.uri);
+    const fileSize = getFileSize(outputUri);
+    const info = await getFileImageInfo(outputUri);
+
     const output: ImageAsset = {
-      uri: result.uri,
+      uri: outputUri,
       fileName: `stripped_${source.fileName}`,
       format: source.format,
-      width: result.width,
-      height: result.height,
+      width: info.width,
+      height: info.height,
       fileSize,
       mimeType: source.mimeType,
     };

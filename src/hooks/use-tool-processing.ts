@@ -31,6 +31,8 @@ export function useToolProcessing() {
     if (!sourceImage) return;
 
     setProcessingState({ status: 'processing', progress: 0, error: undefined });
+    // Clear previous result to prevent stale data showing on result screen
+    useImageStore.setState({ currentResult: null });
     const onProgress = (progress: number) => setProcessingState({ progress });
 
     try {

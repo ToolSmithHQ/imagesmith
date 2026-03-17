@@ -41,14 +41,3 @@ export const FORMAT_LABELS: Record<ImageFormat, string> = {
   [ImageFormat.AVIF]: 'AVIF',
   [ImageFormat.GIF]: 'GIF',
 };
-
-export interface ConversionPath {
-  source: ImageFormat;
-  target: ImageFormat;
-  phase: 1 | 2 | 3;
-  platformSupport: {
-    ios: boolean;
-    android: boolean;
-  };
-  library: 'expo-image-manipulator';
-}

@@ -1,12 +1,17 @@
-import * as ImageManipulator from 'expo-image-manipulator';
 import { Skia, ImageFormat as SkiaImageFormat, ClipOp } from '@shopify/react-native-skia';
 import { File, Paths, Directory } from 'expo-file-system/next';
 import { ImageAsset, CropOptions, ToolResult } from '@/src/types/image';
-import { ImageFormat } from '@/src/types/formats';
+import { ImageFormat, FORMAT_MIME_MAP } from '@/src/types/formats';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
 import { createShapePath, createBrushPath } from '@/src/constants/shapes';
-import { getSaveOptions, getOutputFormat, getOutputMimeType } from '@/src/utils/save-format';
+import {
+  cropFile,
+  rotateFile,
+  losslessJpegRotate,
+  flipFile,
+  getFileImageInfo,
+} from '@/src/services/imagecore-bridge';
 
 export async function cropRotateFlipImage(
   source: ImageAsset,
@@ -18,45 +23,16 @@ export async function cropRotateFlipImage(
   ensureCacheDir();
   onProgress?.(0.1);
 
-  // If shape crop, use Skia-based processing
+  // Shape crops still use Skia (imagecore doesn't do shape masks)
   if (options.shape) {
     return shapeCropImage(source, options, onProgress, startTime);
   }
 
-  const actions: ImageManipulator.Action[] = [];
-
-  // Crop (only if not full image)
-  const isCropped =
-    options.originX > 0 ||
-    options.originY > 0 ||
-    options.width < source.width ||
-    options.height < source.height;
-
-  if (isCropped) {
-    actions.push({
-      crop: {
-        originX: options.originX,
-        originY: options.originY,
-        width: options.width,
-        height: options.height,
-      },
-    });
-  }
-
-  // Rotate
-  if (options.rotation !== 0) {
-    actions.push({ rotate: options.rotation });
-  }
-
-  // Flip
-  if (options.flipHorizontal) {
-    actions.push({ flip: ImageManipulator.FlipType.Horizontal });
-  }
-  if (options.flipVertical) {
-    actions.push({ flip: ImageManipulator.FlipType.Vertical });
-  }
-
-  if (actions.length === 0) {
+  if (
+    options.originX === 0 && options.originY === 0 &&
+    options.width >= source.width && options.height >= source.height &&
+    options.rotation === 0 && !options.flipHorizontal && !options.flipVertical
+  ) {
     throw createProcessingError(
       'PROCESSING_FAILED',
       'No crop, rotation, or flip options selected',
@@ -64,29 +40,78 @@ export async function cropRotateFlipImage(
     );
   }
 
-  onProgress?.(0.3);
-
   try {
-    const saveOptions = getSaveOptions(source.format, reEncodingQuality);
-    const outputFormat = getOutputFormat(source.format);
+    let currentUri = source.uri;
+    const currentFormat = source.format;
 
-    const result = await ImageManipulator.manipulateAsync(
-      source.uri,
-      actions,
-      saveOptions,
-    );
+    // Step 1: Crop
+    const isCropped =
+      options.originX > 0 ||
+      options.originY > 0 ||
+      options.width < source.width ||
+      options.height < source.height;
+
+    if (isCropped) {
+      currentUri = await cropFile(
+        currentUri,
+        Math.round(options.originX),
+        Math.round(options.originY),
+        Math.round(options.width),
+        Math.round(options.height),
+        currentFormat,
+        reEncodingQuality,
+      );
+    }
+
+    onProgress?.(0.4);
+
+    // Step 2: Rotate (only 90/180/270 supported by imagecore)
+    if (options.rotation !== 0) {
+      const normalized = ((options.rotation % 360) + 360) % 360;
+      if (normalized === 90 || normalized === 180 || normalized === 270) {
+        const rotation = normalized as 90 | 180 | 270;
+        // Try lossless JPEG rotation first, fall back to pixel rotation
+        let rotated = false;
+        if (currentFormat === ImageFormat.JPEG) {
+          try {
+            currentUri = await losslessJpegRotate(currentUri, rotation);
+            rotated = true;
+          } catch {
+            // File might not actually be JPEG (e.g., HEIC mislabeled) — fall back
+          }
+        }
+        if (!rotated) {
+          currentUri = await rotateFile(currentUri, rotation, currentFormat, reEncodingQuality);
+        }
+      }
+    }
+
+    onProgress?.(0.7);
+
+    // Step 3: Flip
+    if (options.flipHorizontal || options.flipVertical) {
+      currentUri = await flipFile(
+        currentUri,
+        options.flipHorizontal,
+        options.flipVertical,
+        currentFormat,
+        reEncodingQuality,
+      );
+    }
 
     onProgress?.(0.8);
 
-    const fileSize = getFileSize(result.uri);
+    const fileSize = getFileSize(currentUri);
+    const info = await getFileImageInfo(currentUri);
+
     const output: ImageAsset = {
-      uri: result.uri,
-      fileName: result.uri.split('/').pop() ?? 'cropped.png',
-      format: outputFormat,
-      width: result.width,
-      height: result.height,
+      uri: currentUri,
+      fileName: currentUri.split('/').pop() ?? 'cropped.png',
+      format: currentFormat,
+      width: info.width,
+      height: info.height,
       fileSize,
-      mimeType: getOutputMimeType(source.format),
+      mimeType: FORMAT_MIME_MAP[currentFormat],
     };
 
     onProgress?.(1.0);
@@ -101,6 +126,7 @@ export async function cropRotateFlipImage(
       timestamp: Date.now(),
     };
   } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error) throw error;
     throw createProcessingError(
       'PROCESSING_FAILED',
       error instanceof Error ? error.message : 'Crop failed',
@@ -108,6 +134,10 @@ export async function cropRotateFlipImage(
   }
 }
 
+/**
+ * Shape crop using Skia — imagecore handles the rectangular crop,
+ * Skia handles the shape clipping.
+ */
 async function shapeCropImage(
   source: ImageAsset,
   options: CropOptions,
@@ -115,40 +145,9 @@ async function shapeCropImage(
   startTime: number = Date.now(),
 ): Promise<ToolResult> {
   try {
-    // Step 1: Crop to bounding box first using ImageManipulator
-    const isCropped =
-      options.originX > 0 ||
-      options.originY > 0 ||
-      options.width < source.width ||
-      options.height < source.height;
-
-    let croppedUri = source.uri;
-    let cropWidth = options.width || source.width;
-    let cropHeight = options.height || source.height;
-
-    if (isCropped) {
-      const cropResult = await ImageManipulator.manipulateAsync(
-        source.uri,
-        [{
-          crop: {
-            originX: options.originX,
-            originY: options.originY,
-            width: options.width,
-            height: options.height,
-          },
-        }],
-        { format: ImageManipulator.SaveFormat.PNG },
-      );
-      croppedUri = cropResult.uri;
-      cropWidth = cropResult.width;
-      cropHeight = cropResult.height;
-    }
-
-    onProgress?.(0.3);
-
-    // Step 2: Load image data into Skia
-    const croppedFile = new File(croppedUri);
-    const imageBase64 = await croppedFile.base64();
+    // Load source image into Skia directly (works for all formats including HEIC/AVIF)
+    const sourceFile = new File(source.uri);
+    const imageBase64 = await sourceFile.base64();
     const skData = Skia.Data.fromBase64(imageBase64);
     const skImage = Skia.Image.MakeImageFromEncoded(skData);
 
@@ -156,25 +155,34 @@ async function shapeCropImage(
       throw new Error('Failed to decode image for shape crop');
     }
 
+    const isCropped =
+      options.originX > 0 ||
+      options.originY > 0 ||
+      options.width < source.width ||
+      options.height < source.height;
+
+    // Crop region in source image coordinates
+    const cropX = isCropped ? Math.round(options.originX) : 0;
+    const cropY = isCropped ? Math.round(options.originY) : 0;
+    const cropWidth = isCropped ? Math.round(options.width) : source.width;
+    const cropHeight = isCropped ? Math.round(options.height) : source.height;
+
+    onProgress?.(0.3);
+
     onProgress?.(0.5);
 
-    // Step 3: Create offscreen surface and draw with shape clip
     const isBrush = options.shape === 'brush' && options.brushStrokes && options.brushStrokes.length > 0;
     const outW = isBrush ? cropWidth : Math.min(cropWidth, cropHeight);
     const outH = isBrush ? cropHeight : Math.min(cropWidth, cropHeight);
 
     const surface = Skia.Surface.MakeOffscreen(outW, outH)!;
     const canvas = surface.getCanvas();
-
-    // Clear to transparent
     canvas.clear(Skia.Color('transparent'));
 
-    const srcRect = Skia.XYWHRect(0, 0, cropWidth, cropHeight);
+    const srcRect = Skia.XYWHRect(cropX, cropY, cropWidth, cropHeight);
     const dstRect = Skia.XYWHRect(0, 0, outW, outH);
 
     if (isBrush) {
-      // For brush: draw image first, then use DstIn with thick stroke mask
-      // Step A: Create a mask surface with the brush strokes
       const maskSurface = Skia.Surface.MakeOffscreen(outW, outH)!;
       const maskCanvas = maskSurface.getCanvas();
       maskCanvas.clear(Skia.Color('transparent'));
@@ -182,25 +190,21 @@ async function shapeCropImage(
       const brushPath = createBrushPath(options.brushStrokes!, outW, outH);
       const brushPaint = Skia.Paint();
       brushPaint.setColor(Skia.Color('white'));
-      brushPaint.setStyle(1); // Stroke
+      brushPaint.setStyle(1);
       const brushRadius = Math.max(outW, outH) * 0.03;
       brushPaint.setStrokeWidth(brushRadius * 2);
-      brushPaint.setStrokeCap(1); // Round
-      brushPaint.setStrokeJoin(1); // Round
+      brushPaint.setStrokeCap(1);
+      brushPaint.setStrokeJoin(1);
       brushPaint.setAntiAlias(true);
       maskCanvas.drawPath(brushPath, brushPaint);
 
       const maskSnapshot = maskSurface.makeImageSnapshot();
-
-      // Step B: Draw the source image
       canvas.drawImageRect(skImage, srcRect, dstRect, Skia.Paint());
 
-      // Step C: Apply mask using DstIn (keeps image only where mask is opaque)
       const maskPaint = Skia.Paint();
-      maskPaint.setBlendMode(10); // DstIn
+      maskPaint.setBlendMode(10);
       canvas.drawImage(maskSnapshot, 0, 0, maskPaint);
     } else {
-      // For predefined shapes: clip to shape path and draw image
       const shapePath = createShapePath(options.shape!, outW);
       canvas.save();
       canvas.clipPath(shapePath, ClipOp.Intersect, true);
@@ -210,7 +214,6 @@ async function shapeCropImage(
 
     onProgress?.(0.7);
 
-    // Step 4: Export as PNG (must be PNG for transparency)
     const snapshot = surface.makeImageSnapshot();
     const pngData = snapshot.encodeToBase64(SkiaImageFormat.PNG, 100);
 
