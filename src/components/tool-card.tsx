@@ -38,6 +38,7 @@ export function ToolCard({ tool }: ToolCardProps) {
     <AnimatedPressable
       onPress={handlePress}
       disabled={!tool.enabled}
+      testID={`tool-${tool.id}`}
       style={[styles.card, !tool.enabled && styles.disabled]}
     >
       {Platform.OS === 'ios' ? (

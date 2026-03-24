@@ -12,7 +12,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.toolsmithlabs.imagesmith",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIFileSharingEnabled": true,
+        "LSSupportsOpeningDocumentsInPlace": true
       }
     },
     "android": {
@@ -32,7 +34,7 @@
         "android.permission.READ_MEDIA_VIDEO",
         "android.permission.READ_MEDIA_AUDIO"
       ],
-      "package": "com.anonymous.imagesmith"
+      "package": "com.toolsmithlabs.imagesmith"
     },
     "web": {
       "output": "static",
@@ -40,6 +42,14 @@
     },
     "plugins": [
       "@toolsmith/imagecore-native",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 30
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",

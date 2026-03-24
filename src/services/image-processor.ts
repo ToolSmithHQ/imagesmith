@@ -11,7 +11,7 @@ import {
   generateId,
   getFileSize,
 } from '@/src/services/file-manager';
-import { convertFile, getFileImageInfo } from '@/src/services/imagecore-bridge';
+import { convertFile, getFileImageInfo } from '@toolsmith/imagecore-files';
 import { FORMAT_MIME_MAP } from '@/src/types/formats';
 
 export async function convertImage(

@@ -1,0 +1,9 @@
+# Test: Convert PNG to WEBP
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "samplepngwithtransparency.png"
+      FILE_NAME_IOS: "samplepngwithtransparency"
+      TARGET_FORMAT_ID: "chip-webp"

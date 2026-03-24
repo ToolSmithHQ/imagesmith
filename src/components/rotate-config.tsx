@@ -58,6 +58,7 @@ export function RotateConfig({
           <Text style={[styles.label, { color: iconColor }]}>ROTATE</Text>
           <View style={styles.buttonRow}>
             <Pressable
+              testID="btn-rotate-left"
               onPress={() => {
                 triggerImpact();
                 onRotateLeft();
@@ -68,6 +69,7 @@ export function RotateConfig({
               <Text style={[styles.buttonText, { color: textColor }]}>-90°</Text>
             </Pressable>
             <Pressable
+              testID="btn-rotate-right"
               onPress={() => {
                 triggerImpact();
                 onRotateRight();

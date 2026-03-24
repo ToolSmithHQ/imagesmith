@@ -14,7 +14,29 @@ jest.mock('@toolsmith/imagecore-native', () => ({
     resize: jest.fn(() => ({ width: 50, height: 50, free: jest.fn() })),
     crop: jest.fn(() => ({ width: 50, height: 50, free: jest.fn() })),
     rotate: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
+    flipHorizontal: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
+    flipVertical: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
   },
+  ImageFormat: {
+    JPEG: 'jpeg', PNG: 'png', WEBP: 'webp', HEIC: 'heic',
+    AVIF: 'avif', TIFF: 'tiff', BMP: 'bmp', GIF: 'gif',
+  },
+}));
+
+jest.mock('@toolsmith/imagecore-files', () => ({
+  convertFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  compressFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  resizeFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  cropFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  rotateFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  flipFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  losslessJpegRotate: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
+  getFileImageInfo: jest.fn(() => Promise.resolve({ width: 100, height: 100, format: 'jpeg', hasExif: false, fileSize: 1024 })),
+  stripFileExif: jest.fn(() => Promise.resolve('file:///mock/stripped.jpg')),
+  readFileExif: jest.fn(() => Promise.resolve({})),
+  readFileAsArrayBuffer: jest.fn(() => Promise.resolve(new ArrayBuffer(100))),
+  writeArrayBufferToFile: jest.fn(() => 'file:///mock/output.jpg'),
+  formatToExtension: jest.fn((f) => f === 'jpeg' ? 'jpg' : f),
   ImageFormat: {
     JPEG: 'jpeg', PNG: 'png', WEBP: 'webp', HEIC: 'heic',
     AVIF: 'avif', TIFF: 'tiff', BMP: 'bmp', GIF: 'gif',

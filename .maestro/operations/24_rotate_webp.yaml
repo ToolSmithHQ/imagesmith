@@ -1,0 +1,47 @@
+# Test: Rotate WEBP image
+appId: com.toolsmithlabs.imagesmith
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "tool-convert"
+    timeout: 60000
+
+- tapOn:
+    id: "tool-rotate"
+- tapOn:
+    id: "btn-browse-files"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../pick_file.yaml
+    env:
+      FILE_NAME: "webplossy.webp"
+      FILE_NAME_IOS: "webplossy"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-rotate-right"
+    timeout: 15000
+- tapOn:
+    id: "btn-rotate-right"
+
+# Swipe up to reveal action button if below fold
+- swipe:
+    direction: UP
+    duration: 400
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-apply"
+    timeout: 15000
+- tapOn:
+    id: "btn-apply"
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-save-to-gallery"
+    timeout: 30000
+- assertVisible:
+    id: "btn-save-to-gallery"

@@ -1,0 +1,49 @@
+# Shared: Convert a file from one format to another
+# Required env vars: FILE_NAME, TARGET_FORMAT_ID (chip-png, chip-jpeg, etc.)
+appId: com.toolsmithlabs.imagesmith
+---
+- pressKey: home
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "tool-convert"
+    timeout: 60000
+
+- tapOn:
+    id: "tool-convert"
+- tapOn:
+    id: "btn-browse-files"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../pick_file.yaml
+    env:
+      FILE_NAME: ${FILE_NAME}
+      FILE_NAME_IOS: ${FILE_NAME_IOS}
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible:
+      id: ${TARGET_FORMAT_ID}
+    timeout: 15000
+- tapOn:
+    id: ${TARGET_FORMAT_ID}
+
+# Swipe up to reveal Convert button (may be below fold)
+- swipe:
+    direction: UP
+    duration: 400
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-convert"
+    timeout: 10000
+- tapOn:
+    id: "btn-convert"
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-save-to-gallery"
+    timeout: 30000
+- assertVisible:
+    id: "btn-save-to-gallery"

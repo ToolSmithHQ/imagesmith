@@ -12,6 +12,7 @@ interface ButtonProps {
   onPress: () => void;
   loading?: boolean;
   disabled?: boolean;
+  testID?: string;
 }
 
 export function Button({
@@ -20,6 +21,7 @@ export function Button({
   onPress,
   loading = false,
   disabled = false,
+  testID,
 }: ButtonProps) {
   const tint = useThemeColor({}, 'tint');
   const background = useThemeColor({}, 'background');
@@ -44,6 +46,7 @@ export function Button({
     <AnimatedPressable
       onPress={handlePress}
       disabled={disabled || loading}
+      testID={testID ?? `btn-${title.toLowerCase().replace(/\s+/g, '-')}`}
       style={[
         styles.container,
         containerStyle,

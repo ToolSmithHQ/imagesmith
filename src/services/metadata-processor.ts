@@ -6,7 +6,7 @@ import {
 } from '@/src/types/image';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
-import { readFileExif, stripFileExif, getFileImageInfo } from '@/src/services/imagecore-bridge';
+import { readFileExif, stripFileExif, getFileImageInfo } from '@toolsmith/imagecore-files';
 
 export async function readMetadata(source: ImageAsset): Promise<MetadataResult> {
   try {

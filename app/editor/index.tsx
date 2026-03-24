@@ -422,7 +422,7 @@ export default function EditorScreen() {
                         const formats: { format: ImageFormat | null; label: string; color: string }[] = [
                           { format: null, label: currentDisplay.label, color: currentDisplay.color },
                         ];
-                        const convertible = [ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP] as const;
+                        const convertible = [ImageFormat.JPEG, ImageFormat.PNG, ImageFormat.WEBP, ImageFormat.HEIC, ImageFormat.BMP, ImageFormat.TIFF, ImageFormat.AVIF] as const;
                         for (const fmt of convertible) {
                           if (fmt !== currentFmt) {
                             formats.push({ format: fmt, label: FORMAT_DISPLAY[fmt].label, color: FORMAT_DISPLAY[fmt].color });

@@ -1,0 +1,9 @@
+# Test: Convert WEBP to HEIC
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "webplossy.webp"
+      FILE_NAME_IOS: "webplossy"
+      TARGET_FORMAT_ID: "chip-heic"

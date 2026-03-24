@@ -1,0 +1,9 @@
+# Test: Convert TIFF to AVIF
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "sampletiff.tiff"
+      FILE_NAME_IOS: "sampletiff"
+      TARGET_FORMAT_ID: "chip-avif"

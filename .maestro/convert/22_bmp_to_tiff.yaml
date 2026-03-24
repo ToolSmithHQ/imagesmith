@@ -1,0 +1,9 @@
+# Test: Convert BMP to TIFF
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "samplebmp.bmp"
+      FILE_NAME_IOS: "samplebmp"
+      TARGET_FORMAT_ID: "chip-tiff"

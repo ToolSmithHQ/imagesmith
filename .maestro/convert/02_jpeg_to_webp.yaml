@@ -1,0 +1,9 @@
+# Test: Convert JPEG to WEBP
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "samplejpeg.jpeg"
+      FILE_NAME_IOS: "samplejpeg"
+      TARGET_FORMAT_ID: "chip-webp"

@@ -1,5 +1,5 @@
-import { Skia, ImageFormat as SkiaImageFormat, ClipOp } from '@shopify/react-native-skia';
-import { File, Paths, Directory } from 'expo-file-system/next';
+import { Skia, ClipOp } from '@shopify/react-native-skia';
+import { File } from 'expo-file-system/next';
 import { ImageAsset, CropOptions, ToolResult } from '@/src/types/image';
 import { ImageFormat, FORMAT_MIME_MAP } from '@/src/types/formats';
 import { createProcessingError } from '@/src/utils/error-handler';
@@ -11,7 +11,9 @@ import {
   losslessJpegRotate,
   flipFile,
   getFileImageInfo,
-} from '@/src/services/imagecore-bridge';
+  writeArrayBufferToFile,
+  readFileAsArrayBuffer,
+} from '@toolsmith/imagecore-files';
 
 export async function cropRotateFlipImage(
   source: ImageAsset,
@@ -126,6 +128,7 @@ export async function cropRotateFlipImage(
       timestamp: Date.now(),
     };
   } catch (error) {
+    console.error('[imagecore] crop/rotate/flip error:', error instanceof Error ? error.message : error);
     if (error && typeof error === 'object' && 'code' in error) throw error;
     throw createProcessingError(
       'PROCESSING_FAILED',
@@ -145,11 +148,35 @@ async function shapeCropImage(
   startTime: number = Date.now(),
 ): Promise<ToolResult> {
   try {
-    // Load source image into Skia directly (works for all formats including HEIC/AVIF)
-    const sourceFile = new File(source.uri);
-    const imageBase64 = await sourceFile.base64();
-    const skData = Skia.Data.fromBase64(imageBase64);
-    const skImage = Skia.Image.MakeImageFromEncoded(skData);
+    // Load source image into Skia
+    let skImage = null;
+
+    // Method 1: Load directly via Skia
+    try {
+      const sourceFile = new File(source.uri);
+      const imageBase64 = await sourceFile.base64();
+      const skData = Skia.Data.fromBase64(imageBase64);
+      skImage = Skia.Image.MakeImageFromEncoded(skData);
+    } catch {
+      // Skia can't decode this format — try imagecore fallback
+    }
+
+    // Method 2: Convert via imagecore → JPEG → load into Skia
+    if (!skImage) {
+      try {
+        const inputBuffer = await readFileAsArrayBuffer(source.uri);
+        const { ImageCore } = require('@toolsmith/imagecore-native');
+        // Use JPEG instead of PNG (avoids indexed color PNG issues)
+        const jpegBuffer = ImageCore.convert(inputBuffer, { format: 'jpeg' as any, quality: 0.95 });
+        const jpegUri = writeArrayBufferToFile(jpegBuffer, 'jpg');
+        const jpegFile = new File(jpegUri);
+        const jpegBase64 = await jpegFile.base64();
+        const skData = Skia.Data.fromBase64(jpegBase64);
+        skImage = Skia.Image.MakeImageFromEncoded(skData);
+      } catch {
+        // imagecore fallback also failed
+      }
+    }
 
     if (!skImage) {
       throw new Error('Failed to decode image for shape crop');
@@ -215,14 +242,59 @@ async function shapeCropImage(
     onProgress?.(0.7);
 
     const snapshot = surface.makeImageSnapshot();
-    const pngData = snapshot.encodeToBase64(SkiaImageFormat.PNG, 100);
+    if (!snapshot) {
+      throw new Error('Failed to create image snapshot from Skia surface');
+    }
 
-    const cacheDir = new Directory(Paths.cache, 'imagesmith');
-    const outputFileName = `${generateId()}_shape.png`;
-    const outputFile = new File(cacheDir, outputFileName);
-    outputFile.create();
-    outputFile.write(pngData, { encoding: 'base64' });
-    const outputUri = outputFile.uri;
+    // Read raw RGBA pixels from Skia surface (always works, unlike encodeToBase64)
+    const pixelData = snapshot.readPixels(0, 0, {
+      width: outW,
+      height: outH,
+      colorType: 4, // RGBA_8888
+      alphaType: 3, // Unpremul
+    });
+
+    if (!pixelData) {
+      throw new Error('Failed to read pixels from Skia snapshot');
+    }
+
+    // Encode raw RGBA pixels to PNG via imagecore
+    const { ImageCore } = require('@toolsmith/imagecore-native');
+    const rgbaBytes = pixelData instanceof Uint8Array ? pixelData : new Uint8Array(pixelData.buffer);
+
+    // Create an ArrayBuffer with raw RGBA pixel data
+    // We can't use ImageCore.decode() (expects encoded format), so we need to
+    // create a BMP in memory (simplest uncompressed format) and decode that
+    const bmpSize = 54 + rgbaBytes.length; // BMP header (54 bytes) + pixel data
+    const bmp = new ArrayBuffer(bmpSize);
+    const view = new DataView(bmp);
+
+    // BMP file header (14 bytes)
+    view.setUint8(0, 0x42); // 'B'
+    view.setUint8(1, 0x4D); // 'M'
+    view.setUint32(2, bmpSize, true); // file size
+    view.setUint32(10, 54, true); // pixel data offset
+
+    // BMP info header (40 bytes)
+    view.setUint32(14, 40, true); // header size
+    view.setInt32(18, outW, true); // width
+    view.setInt32(22, -outH, true); // height (negative = top-down)
+    view.setUint16(26, 1, true); // planes
+    view.setUint16(28, 32, true); // bits per pixel (RGBA)
+    view.setUint32(30, 0, true); // compression (none)
+
+    // Copy RGBA pixels — BMP uses BGRA order
+    const pixelStart = 54;
+    for (let i = 0; i < rgbaBytes.length; i += 4) {
+      view.setUint8(pixelStart + i + 0, rgbaBytes[i + 2]); // B
+      view.setUint8(pixelStart + i + 1, rgbaBytes[i + 1]); // G
+      view.setUint8(pixelStart + i + 2, rgbaBytes[i + 0]); // R
+      view.setUint8(pixelStart + i + 3, rgbaBytes[i + 3]); // A
+    }
+
+    // Convert BMP→PNG via imagecore
+    const pngBuffer = ImageCore.convert(bmp, { format: 'png' as any, quality: 1.0 });
+    const outputUri = writeArrayBufferToFile(pngBuffer, 'png');
 
     onProgress?.(0.9);
 
@@ -249,6 +321,7 @@ async function shapeCropImage(
       timestamp: Date.now(),
     };
   } catch (error) {
+    console.error('[imagecore] shape crop error:', error instanceof Error ? error.message : error);
     throw createProcessingError(
       'PROCESSING_FAILED',
       error instanceof Error ? error.message : 'Shape crop failed',

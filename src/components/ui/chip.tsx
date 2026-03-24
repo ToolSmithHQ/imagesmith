@@ -29,6 +29,7 @@ export function Chip({
     <AnimatedPressable
       onPress={handlePress}
       disabled={disabled || !onPress}
+      testID={`chip-${label.toLowerCase().replace(/\s+/g, '-')}`}
       scaleValue={0.95}
       style={[
         styles.chip,

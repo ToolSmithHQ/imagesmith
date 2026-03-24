@@ -1,0 +1,23 @@
+# Shared: pick the first image from Android/iOS gallery picker
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      # Modern Android photo picker (SDK 33+)
+      - tapOn:
+          id: "com.google.android.providers.media.module:id/icon_thumbnail"
+          optional: true
+      # Older Android document picker
+      - tapOn:
+          id: "com.google.android.documentsui:id/thumbnail"
+          optional: true
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      # iOS photo picker — tap first image in grid
+      - tapOn:
+          point: "50%,30%"

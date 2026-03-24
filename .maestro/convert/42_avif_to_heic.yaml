@@ -1,0 +1,9 @@
+# Test: Convert AVIF to HEIC
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    file: ../helpers/convert_flow.yaml
+    env:
+      FILE_NAME: "sampleavif.avif"
+      FILE_NAME_IOS: "sampleavif"
+      TARGET_FORMAT_ID: "chip-heic"

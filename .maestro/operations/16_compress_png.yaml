@@ -1,0 +1,40 @@
+# Test: Compress PNG image
+appId: com.toolsmithlabs.imagesmith
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "tool-convert"
+    timeout: 60000
+
+- tapOn:
+    id: "tool-compress"
+- tapOn:
+    id: "btn-browse-files"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../pick_file.yaml
+    env:
+      FILE_NAME: "samplepngwithtransparency.png"
+      FILE_NAME_IOS: "samplepngwithtransparency"
+- waitForAnimationToEnd
+
+# Swipe up to reveal action button if below fold
+- swipe:
+    direction: UP
+    duration: 400
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-compress"
+    timeout: 15000
+- tapOn:
+    id: "btn-compress"
+
+- extendedWaitUntil:
+    visible:
+      id: "btn-save-to-gallery"
+    timeout: 30000
+- assertVisible:
+    id: "btn-save-to-gallery"

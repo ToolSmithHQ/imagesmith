@@ -1,0 +1,36 @@
+# Shared: pick a specific file from the document picker (Browse Files)
+# Expects FILE_NAME env variable (e.g., "samplejpeg.jpeg")
+# Expects FILE_NAME_IOS env variable (e.g., "samplejpeg") — iOS hides extensions
+# The file picker must already be open
+appId: com.toolsmithlabs.imagesmith
+---
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "com.google.android.documentsui:id/sub_menu_list"
+          optional: true
+      - waitForAnimationToEnd
+      - scrollUntilVisible:
+          element:
+            text: ${FILE_NAME}
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          text: ${FILE_NAME}
+          retryTapIfNoChange: false
+
+# TODO: iOS file picker automation not yet reliable with Maestro.
+# iOS document picker grid view doesn't respond correctly to Maestro taps.
+# Needs investigation — possibly use gallery picker for iOS E2E tests instead.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          text: "Image Smith"
+          optional: true
+      - waitForAnimationToEnd
+      - tapOn:
+          text: ${FILE_NAME_IOS}

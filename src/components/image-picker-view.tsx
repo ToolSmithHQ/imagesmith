@@ -20,6 +20,7 @@ export function ImagePickerView() {
     <View style={styles.container}>
       <AnimatedPressable
         onPress={pickFromGallery}
+        testID="btn-choose-gallery"
         style={[styles.primaryCard, { backgroundColor: surfaceContainer }]}
       >
         <View style={[styles.iconCircle, { backgroundColor: tintContainer }]}>
@@ -35,6 +36,7 @@ export function ImagePickerView() {
 
       <AnimatedPressable
         onPress={pickFromFiles}
+        testID="btn-browse-files"
         style={[styles.secondaryCard, { backgroundColor: surfaceContainerLow }]}
       >
         <IconSymbol name="folder" size={22} color={tint} />
