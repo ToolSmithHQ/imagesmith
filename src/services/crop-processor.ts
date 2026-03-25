@@ -13,7 +13,7 @@ import {
   getFileImageInfo,
   writeArrayBufferToFile,
   readFileAsArrayBuffer,
-} from '@toolsmith/imagecore-files';
+} from '@toolsmithhq/imagecore-files';
 
 export async function cropRotateFlipImage(
   source: ImageAsset,
@@ -165,7 +165,7 @@ async function shapeCropImage(
     if (!skImage) {
       try {
         const inputBuffer = await readFileAsArrayBuffer(source.uri);
-        const { ImageCore } = require('@toolsmith/imagecore-native');
+        const { ImageCore } = require('@toolsmithhq/imagecore-native');
         // Use JPEG instead of PNG (avoids indexed color PNG issues)
         const jpegBuffer = ImageCore.convert(inputBuffer, { format: 'jpeg' as any, quality: 0.95 });
         const jpegUri = writeArrayBufferToFile(jpegBuffer, 'jpg');
@@ -259,7 +259,7 @@ async function shapeCropImage(
     }
 
     // Encode raw RGBA pixels to PNG via imagecore
-    const { ImageCore } = require('@toolsmith/imagecore-native');
+    const { ImageCore } = require('@toolsmithhq/imagecore-native');
     const rgbaBytes = pixelData instanceof Uint8Array ? pixelData : new Uint8Array(pixelData.buffer);
 
     // Create an ArrayBuffer with raw RGBA pixel data

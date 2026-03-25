@@ -1,6 +1,6 @@
 // Mock native modules that aren't available in test environment
 
-jest.mock('@toolsmith/imagecore-native', () => ({
+jest.mock('@toolsmithhq/imagecore-native', () => ({
   ImageCore: {
     getImageInfo: jest.fn(() => ({ width: 100, height: 100, format: 'jpeg', hasExif: false, fileSize: 1024 })),
     decode: jest.fn(() => ({ width: 100, height: 100, free: jest.fn() })),
@@ -23,7 +23,7 @@ jest.mock('@toolsmith/imagecore-native', () => ({
   },
 }));
 
-jest.mock('@toolsmith/imagecore-files', () => ({
+jest.mock('@toolsmithhq/imagecore-files', () => ({
   convertFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
   compressFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),
   resizeFile: jest.fn(() => Promise.resolve('file:///mock/output.jpg')),

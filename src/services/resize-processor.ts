@@ -1,7 +1,7 @@
 import { ImageAsset, ResizeOptions, ToolResult } from '@/src/types/image';
 import { createProcessingError } from '@/src/utils/error-handler';
 import { ensureCacheDir, generateId, getFileSize } from '@/src/services/file-manager';
-import { resizeFile, getFileImageInfo } from '@toolsmith/imagecore-files';
+import { resizeFile, getFileImageInfo } from '@toolsmithhq/imagecore-files';
 import { FORMAT_MIME_MAP } from '@/src/types/formats';
 
 export async function resizeImage(

@@ -5,12 +5,6 @@
     "paths": {
       "@/*": [
         "./*"
-      ],
-      "@toolsmith/imagecore-types": [
-        "../imagecore/packages/types/src/index.ts"
-      ],
-      "@toolsmith/imagecore-files": [
-        "../imagecore/packages/files/src/index.ts"
       ]
     }
   },

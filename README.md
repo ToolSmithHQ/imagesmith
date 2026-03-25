@@ -45,7 +45,7 @@ To work with the actual HEIC/AVIF file, use **"Browse Files"** (document picker)
 - **React Native 0.81** + React 19 + React Compiler
 - **expo-router** — file-based navigation
 - **Zustand** — state management with AsyncStorage persistence
-- **@toolsmith/imagecore-native** — C/C++ image processing via JSI (libjpeg-turbo, libpng, libwebp, libtiff + platform APIs for HEIC)
+- **@toolsmithhq/imagecore-native** — C/C++ image processing via JSI (libjpeg-turbo, libpng, libwebp, libtiff + platform APIs for HEIC)
 - **@shopify/react-native-skia** — GPU-accelerated shape/brush crop with path clipping
 
 ## Getting Started
