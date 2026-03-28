@@ -50,6 +50,7 @@
           }
         }
       ],
+      "./plugins/android-abi-filter",
       "expo-router",
       [
         "expo-splash-screen",
